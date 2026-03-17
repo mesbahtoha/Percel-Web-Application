@@ -126,21 +126,24 @@ admin.initializeApp({
 
 
 
-if (!process.env.EMAIL_SENDER || !process.env.EMAIL_PASS) {
-  console.error("❌ EMAIL_SENDER or EMAIL_PASS is missing in .env");
-  process.exit(1);
-}
- 
+// if (!process.env.EMAIL_SENDER || !process.env.EMAIL_PASS) {
+//   console.error("❌ EMAIL_SENDER or EMAIL_PASS is missing in .env");
+//   process.exit(1);
+// }
+
+const EMAIL_SENDER = "mdmesbah321@gmail.com";
+const EMAIL_PASS = "imrt aazf ftdt ybwm"
+
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
   secure: true, // true for port 465 (SSL)
   auth: {
-    user: process.env.EMAIL_SENDER,
-    pass: process.env.EMAIL_PASS, // Must be an App Password, not your Gmail login
+    user: EMAIL_SENDER,
+    pass: EMAIL_PASS, // Must be an App Password, not your Gmail login
   },
 });
- 
+
 // Verify SMTP connection at startup so you catch config issues early
 transporter.verify((error) => {
   if (error) {
@@ -628,16 +631,16 @@ app.patch("/users/profile", verifyFBToken, async (req, res) => {
 app.post("/auth/send-otp", async (req, res) => {
   try {
     const { email } = req.body;
- 
+
     if (!email) {
       return res.status(400).send({ success: false, message: "Email is required" });
     }
- 
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
- 
+
     // Clear any previous OTPs for this email
     await otpCollection.deleteMany({ email });
- 
+
     await otpCollection.insertOne({
       email,
       otp,
@@ -645,9 +648,9 @@ app.post("/auth/send-otp", async (req, res) => {
       expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
       verified: false,
     });
- 
+
     await transporter.sendMail({
-      from: `"Profast" <${process.env.EMAIL_SENDER}>`,
+      from: `"Profast" <${EMAIL_SENDER}>`,
       to: email,
       subject: "Your OTP Verification Code",
       html: `
@@ -661,7 +664,7 @@ app.post("/auth/send-otp", async (req, res) => {
         </div>
       `,
     });
- 
+
     res.send({ success: true, message: "OTP sent successfully" });
   } catch (error) {
     console.error("Send OTP error:", error.message);
@@ -672,33 +675,33 @@ app.post("/auth/send-otp", async (req, res) => {
     });
   }
 });
- 
+
 app.post("/auth/verify-otp", async (req, res) => {
   try {
     const { email, otp } = req.body;
- 
+
     if (!email || !otp) {
       return res.status(400).send({
         success: false,
         message: "Email and OTP are required",
       });
     }
- 
+
     const otpDoc = await otpCollection.findOne({ email, otp });
- 
+
     if (!otpDoc) {
       return res.status(400).send({ success: false, message: "Invalid OTP" });
     }
- 
+
     if (new Date() > new Date(otpDoc.expiresAt)) {
       return res.status(400).send({ success: false, message: "OTP has expired. Please request a new one." });
     }
- 
+
     await otpCollection.updateOne(
       { _id: otpDoc._id },
       { $set: { verified: true } }
     );
- 
+
     res.send({ success: true, message: "Email verified successfully" });
   } catch (error) {
     console.error("Verify OTP error:", error.message);
@@ -1804,13 +1807,13 @@ app.get("/admin/users", verifyFBToken, verifyAdmin, async (req, res) => {
 
     const query = search
       ? {
-          $or: [
-            { name: { $regex: search, $options: "i" } },
-            { email: { $regex: search, $options: "i" } },
-            { phone: { $regex: search, $options: "i" } },
-          ],
-          role: { $ne: "admin" },
-        }
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+        ],
+        role: { $ne: "admin" },
+      }
       : { role: { $ne: "admin" } };
 
     const users = await usersCollection.find(query).sort({ created_at: -1 }).toArray();
@@ -1919,12 +1922,12 @@ app.get("/admin/parcel-tracking", verifyFBToken, verifyAdmin, async (req, res) =
 
     const query = search
       ? {
-          $or: [
-            { trackingId: { $regex: search, $options: "i" } },
-            { senderName: { $regex: search, $options: "i" } },
-            { receiverName: { $regex: search, $options: "i" } },
-          ],
-        }
+        $or: [
+          { trackingId: { $regex: search, $options: "i" } },
+          { senderName: { $regex: search, $options: "i" } },
+          { receiverName: { $regex: search, $options: "i" } },
+        ],
+      }
       : {};
 
     const parcels = await parcelsCollection.find(query).sort({ createdAt: -1 }).toArray();
