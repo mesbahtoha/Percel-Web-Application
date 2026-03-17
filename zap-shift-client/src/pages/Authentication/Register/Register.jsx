@@ -381,7 +381,6 @@ export const Register = () => {
   const {
     register,
     handleSubmit,
-    getValues,
     formState: { errors },
   } = useForm();
 
@@ -389,100 +388,12 @@ export const Register = () => {
   const [profilePic, setProfilePic] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  const [otp, setOtp] = useState("");
-  const [otpToken, setOtpToken] = useState(""); // ← JWT token returned from backend
-  const [sendingOtp, setSendingOtp] = useState(false);
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [otpMessage, setOtpMessage] = useState("");
-
   const axiosInstance = useAxios();
   const navigate = useNavigate();
 
-  const handleSendOtp = async () => {
-    try {
-      const email = getValues("email");
-
-      if (!email) {
-        setOtpMessage("Please enter your email first.");
-        return;
-      }
-
-      setSendingOtp(true);
-      setOtpMessage("");
-      setOtpVerified(false);
-      setOtpToken("");
-      setOtp("");
-
-      const res = await axiosInstance.post("/auth/send-otp", { email });
-
-      if (res.data?.success) {
-        setOtpSent(true);
-        setOtpToken(res.data.token); // ← store the JWT token from backend
-        setOtpMessage("OTP sent successfully. Please check your email.");
-      } else {
-        setOtpMessage(res.data?.message || "Failed to send OTP");
-      }
-    } catch (error) {
-      setOtpMessage(error?.response?.data?.message || "Failed to send OTP");
-    } finally {
-      setSendingOtp(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    try {
-      const email = getValues("email");
-
-      if (!email) {
-        setOtpMessage("Please enter your email first.");
-        return;
-      }
-
-      if (!otp) {
-        setOtpMessage("Please enter the OTP.");
-        return;
-      }
-
-      if (!otpToken) {
-        setOtpMessage("Please request a new OTP.");
-        return;
-      }
-
-      setVerifyingOtp(true);
-      setOtpMessage("");
-
-      // Send email + otp + token — backend verifies without touching the database
-      const res = await axiosInstance.post("/auth/verify-otp", {
-        email,
-        otp,
-        token: otpToken,
-      });
-
-      if (res.data?.success) {
-        setOtpVerified(true);
-        setOtpMessage("Email verified successfully.");
-      } else {
-        setOtpVerified(false);
-        setOtpMessage(res.data?.message || "Invalid OTP");
-      }
-    } catch (error) {
-      setOtpVerified(false);
-      setOtpMessage(error?.response?.data?.message || "OTP verification failed");
-    } finally {
-      setVerifyingOtp(false);
-    }
-  };
-
   const onSubmit = async (data) => {
     try {
-      if (!otpVerified) {
-        setOtpMessage("Please verify your email with OTP first.");
-        return;
-      }
-
-      const result = await createUser(data.email, data.password);
+      await createUser(data.email, data.password);
 
       const userInfo = {
         name: data.name,
@@ -493,17 +404,15 @@ export const Register = () => {
 
       await axiosInstance.post("/users", userInfo);
 
-      const userProfile = {
+      await updateUserProfile({
         displayName: data.name,
         photoURL: profilePic || "",
-      };
-
-      await updateUserProfile(userProfile);
+      });
 
       navigate("/dashboard/overview", { replace: true });
     } catch (error) {
       console.error("Register error:", error);
-      alert("Already Registered this Gmail");
+      alert("Already Registered with this Email");
     }
   };
 
@@ -596,10 +505,9 @@ export const Register = () => {
                 Name
               </label>
               <input
-                {...register("name")}
+                {...register("name", { required: true })}
                 type="text"
                 placeholder="Name"
-                required
                 className="w-full border border-base-300 bg-base-100 text-base-content rounded-lg px-4 py-2 placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -608,60 +516,13 @@ export const Register = () => {
               <label className="block font-semibold mb-1 text-base-content">
                 Email
               </label>
-              <div className="flex gap-2">
-                <input
-                  {...register("email")}
-                  type="email"
-                  placeholder="Email"
-                  required
-                  className="w-full border border-base-300 bg-base-100 text-base-content rounded-lg px-4 py-2 placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  disabled={sendingOtp}
-                  className="btn btn-primary rounded-lg disabled:opacity-50"
-                >
-                  {sendingOtp ? "Sending..." : otpSent ? "Resend" : "Send OTP"}
-                </button>
-              </div>
+              <input
+                {...register("email", { required: true })}
+                type="email"
+                placeholder="Email"
+                className="w-full border border-base-300 bg-base-100 text-base-content rounded-lg px-4 py-2 placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary"
+              />
             </div>
-
-            {otpSent && (
-              <div>
-                <label className="block font-semibold mb-1 text-base-content">
-                  OTP
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    placeholder="Enter OTP"
-                    maxLength={6}
-                    className="w-full border border-base-300 bg-base-100 text-base-content rounded-lg px-4 py-2 placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleVerifyOtp}
-                    disabled={verifyingOtp || otpVerified}
-                    className="btn btn-info text-info-content rounded-lg disabled:opacity-50"
-                  >
-                    {otpVerified
-                      ? "✓ Verified"
-                      : verifyingOtp
-                      ? "Verifying..."
-                      : "Verify"}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {otpMessage && (
-              <p className={`text-sm ${otpVerified ? "text-success" : "text-error"}`}>
-                {otpMessage}
-              </p>
-            )}
 
             <div>
               <label className="block font-semibold mb-1 text-base-content">
@@ -674,19 +535,20 @@ export const Register = () => {
                 })}
                 type="password"
                 placeholder="Password"
-                required
                 className="w-full border border-base-300 bg-base-100 text-base-content rounded-lg px-4 py-2 placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary"
               />
               {errors.password?.type === "required" && (
-                <p className="text-error">Password is required</p>
+                <p className="text-error text-sm">Password is required</p>
               )}
               {errors.password?.type === "minLength" && (
-                <p className="text-error">Password must be 6 characters or longer</p>
+                <p className="text-error text-sm">
+                  Password must be 6 characters or longer
+                </p>
               )}
             </div>
 
             <button
-              disabled={uploading || !otpVerified}
+              disabled={uploading}
               className="btn btn-primary w-full rounded-lg disabled:opacity-50"
             >
               {uploading ? "Uploading image..." : "Register"}
