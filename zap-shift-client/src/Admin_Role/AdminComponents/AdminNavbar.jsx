@@ -11,7 +11,7 @@ import {
 import { getAuth, signOut } from "firebase/auth";
 import { Link } from "react-router";
 
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "https://percel-web-application-production.up.railway.app";
 
 const getToken = async () => {
   const auth = getAuth();

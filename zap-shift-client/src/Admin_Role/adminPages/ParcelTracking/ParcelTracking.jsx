@@ -5,7 +5,7 @@ import { getAuth } from "firebase/auth";
 import { userParcelsKey } from "../../../pages/Dashboard/TrackParcel/TrackParcel";
 
 // Base URL for API calls – fallback to localhost during development
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://percel-web-application-production.up.railway.app";
 
 // All possible delivery statuses that an admin can set
 const STATUS_OPTIONS = [

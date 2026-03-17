@@ -3,7 +3,7 @@ import { RefreshCw, Search, CreditCard } from "lucide-react";
 import { getAuth } from "firebase/auth";
 
 // Base API URL – you may want to replace this with an environment variable later
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "https://percel-web-application-production.up.railway.app";
 
 /**
  * Retrieves the current Firebase user's ID token.

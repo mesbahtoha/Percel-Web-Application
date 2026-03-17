@@ -17,7 +17,7 @@ import {
  * Use env URL in production, but keep localhost as fallback for development.
  */
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+  import.meta.env.VITE_API_BASE_URL || "https://percel-web-application-production.up.railway.app";
 
 /**
  * Task statuses shown in the UI.

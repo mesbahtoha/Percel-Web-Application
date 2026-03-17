@@ -3,7 +3,7 @@ import { ArrowLeft, RefreshCw, UserCheck } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://percel-web-application-production.up.railway.app";
 
 export const RiderDetails = () => {
   const { id: riderId } = useParams();

@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import { riderProfileKey } from "../../../RiderRole/pages/Rider/RiderProfile";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://percel-web-application-production.up.railway.app";
 
 const getToken = async () => {
   const auth = getAuth();

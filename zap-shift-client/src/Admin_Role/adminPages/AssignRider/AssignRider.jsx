@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { getAuth } from "firebase/auth";
 
 // Base API URL – hardcoded as per original, but you might want to use env variables
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "https://percel-web-application-production.up.railway.app";
 
 /**
  * Retrieves the current Firebase user's ID token.

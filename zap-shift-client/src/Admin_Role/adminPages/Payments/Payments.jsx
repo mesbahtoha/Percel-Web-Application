@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CreditCard, RefreshCw, Search, Wallet } from "lucide-react";
 import { getAuth } from "firebase/auth";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://percel-web-application-production.up.railway.app";
 
 // Default summary values used on initial load and on fetch errors
 const DEFAULT_SUMMARY = { totalCashIn: 0, paidCount: 0, pendingAdminReceive: 0 };
