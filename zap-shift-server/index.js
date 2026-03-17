@@ -205,9 +205,9 @@ const createNotification = async ({
 /*                              MongoDB Connection                            */
 /* -------------------------------------------------------------------------- */
 
-// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@mesbahul01.jvrqgnw.mongodb.net/?retryWrites=true&w=majority&appName=Mesbahul01`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@mesbahul01.jvrqgnw.mongodb.net/?retryWrites=true&w=majority&appName=Mesbahul01`;
 
-const uri = process.env.MONGODB_URI;
+// const uri = process.env.MONGODB_URI;
 
 if (!uri) {
   console.error("MONGODB_URI is missing");
