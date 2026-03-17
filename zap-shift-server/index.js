@@ -91,13 +91,13 @@ admin.initializeApp({
 
 
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_SENDER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+// const transporter = nodemailer.createTransport({
+//   service: "gmail",
+//   auth: {
+//     user: process.env.EMAIL_SENDER,
+//     pass: process.env.EMAIL_PASS,
+//   },
+// });
 
 
 
@@ -118,6 +118,44 @@ const transporter = nodemailer.createTransport({
 //     console.log("SMTP ready");
 //   }
 // });
+
+
+
+
+
+
+
+
+if (!process.env.EMAIL_SENDER || !process.env.EMAIL_PASS) {
+  console.error("❌ EMAIL_SENDER or EMAIL_PASS is missing in .env");
+  process.exit(1);
+}
+ 
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true, // true for port 465 (SSL)
+  auth: {
+    user: process.env.EMAIL_SENDER,
+    pass: process.env.EMAIL_PASS, // Must be an App Password, not your Gmail login
+  },
+});
+ 
+// Verify SMTP connection at startup so you catch config issues early
+transporter.verify((error) => {
+  if (error) {
+    console.error("❌ Nodemailer SMTP connection failed:", error.message);
+    console.error(
+      "   → Make sure EMAIL_SENDER and EMAIL_PASS are set correctly in .env"
+    );
+    console.error("   → EMAIL_PASS must be a Gmail App Password, not your login password");
+  } else {
+    console.log("✅ Nodemailer SMTP ready — OTP emails will work");
+  }
+});
+
+
+
 
 
 
@@ -489,89 +527,181 @@ app.patch("/users/profile", verifyFBToken, async (req, res) => {
 /*                                  OTP Routes                                */
 /* -------------------------------------------------------------------------- */
 
+// app.post("/auth/send-otp", async (req, res) => {
+//   try {
+//     const { email } = req.body;
+
+//     if (!email) {
+//       return res
+//         .status(400)
+//         .send({ success: false, message: "Email is required" });
+//     }
+
+//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+//     await otpCollection.deleteMany({ email });
+
+//     await otpCollection.insertOne({
+//       email,
+//       otp,
+//       createdAt: now(),
+//       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+//       verified: false,
+//     });
+
+//     await transporter.sendMail({
+//       from: process.env.EMAIL_SENDER,
+//       to: email,
+//       subject: "Your OTP Code",
+//       html: `<h2>Your OTP is: ${otp}</h2><p>This OTP will expire in 5 minutes.</p>`,
+//     });
+
+//     res.send({
+//       success: true,
+//       message: "OTP sent successfully",
+//     });
+//   } catch (error) {
+//     res.status(500).send({
+//       success: false,
+//       message: "Failed to send OTP",
+//       error: error.message,
+//     });
+//   }
+// });
+
+// app.post("/auth/verify-otp", async (req, res) => {
+//   try {
+//     const { email, otp } = req.body;
+
+//     if (!email || !otp) {
+//       return res.status(400).send({
+//         success: false,
+//         message: "Email and OTP are required",
+//       });
+//     }
+
+//     const otpDoc = await otpCollection.findOne({ email, otp });
+
+//     if (!otpDoc) {
+//       return res.status(400).send({
+//         success: false,
+//         message: "Invalid OTP",
+//       });
+//     }
+
+//     if (new Date() > new Date(otpDoc.expiresAt)) {
+//       return res.status(400).send({
+//         success: false,
+//         message: "OTP expired",
+//       });
+//     }
+
+//     await otpCollection.updateOne(
+//       { _id: otpDoc._id },
+//       {
+//         $set: {
+//           verified: true,
+//         },
+//       }
+//     );
+
+//     res.send({
+//       success: true,
+//       message: "OTP verified successfully",
+//     });
+//   } catch (error) {
+//     res.status(500).send({
+//       success: false,
+//       message: "Failed to verify OTP",
+//       error: error.message,
+//     });
+//   }
+// });
+
+
+
+
+
+
+
+
 app.post("/auth/send-otp", async (req, res) => {
   try {
     const { email } = req.body;
-
+ 
     if (!email) {
-      return res
-        .status(400)
-        .send({ success: false, message: "Email is required" });
+      return res.status(400).send({ success: false, message: "Email is required" });
     }
-
+ 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
+ 
+    // Clear any previous OTPs for this email
     await otpCollection.deleteMany({ email });
-
+ 
     await otpCollection.insertOne({
       email,
       otp,
       createdAt: now(),
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
       verified: false,
     });
-
+ 
     await transporter.sendMail({
-      from: process.env.EMAIL_SENDER,
+      from: `"Profast" <${process.env.EMAIL_SENDER}>`,
       to: email,
-      subject: "Your OTP Code",
-      html: `<h2>Your OTP is: ${otp}</h2><p>This OTP will expire in 5 minutes.</p>`,
+      subject: "Your OTP Verification Code",
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:8px;">
+          <h2 style="color:#16a34a;margin-bottom:8px;">Profast Email Verification</h2>
+          <p style="color:#374151;">Use the OTP below to verify your email address. It expires in <strong>5 minutes</strong>.</p>
+          <div style="font-size:36px;font-weight:bold;letter-spacing:8px;text-align:center;padding:20px;background:#f3f4f6;border-radius:8px;margin:20px 0;color:#111827;">
+            ${otp}
+          </div>
+          <p style="color:#6b7280;font-size:13px;">If you did not request this, please ignore this email.</p>
+        </div>
+      `,
     });
-
-    res.send({
-      success: true,
-      message: "OTP sent successfully",
-    });
+ 
+    res.send({ success: true, message: "OTP sent successfully" });
   } catch (error) {
+    console.error("Send OTP error:", error.message);
     res.status(500).send({
       success: false,
-      message: "Failed to send OTP",
+      message: "Failed to send OTP. Please check server email configuration.",
       error: error.message,
     });
   }
 });
-
+ 
 app.post("/auth/verify-otp", async (req, res) => {
   try {
     const { email, otp } = req.body;
-
+ 
     if (!email || !otp) {
       return res.status(400).send({
         success: false,
         message: "Email and OTP are required",
       });
     }
-
+ 
     const otpDoc = await otpCollection.findOne({ email, otp });
-
+ 
     if (!otpDoc) {
-      return res.status(400).send({
-        success: false,
-        message: "Invalid OTP",
-      });
+      return res.status(400).send({ success: false, message: "Invalid OTP" });
     }
-
+ 
     if (new Date() > new Date(otpDoc.expiresAt)) {
-      return res.status(400).send({
-        success: false,
-        message: "OTP expired",
-      });
+      return res.status(400).send({ success: false, message: "OTP has expired. Please request a new one." });
     }
-
+ 
     await otpCollection.updateOne(
       { _id: otpDoc._id },
-      {
-        $set: {
-          verified: true,
-        },
-      }
+      { $set: { verified: true } }
     );
-
-    res.send({
-      success: true,
-      message: "OTP verified successfully",
-    });
+ 
+    res.send({ success: true, message: "Email verified successfully" });
   } catch (error) {
+    console.error("Verify OTP error:", error.message);
     res.status(500).send({
       success: false,
       message: "Failed to verify OTP",
@@ -579,6 +709,13 @@ app.post("/auth/verify-otp", async (req, res) => {
     });
   }
 });
+
+
+
+
+
+
+
 
 /* -------------------------------------------------------------------------- */
 /*                                  Role Route                                */
