@@ -12,9 +12,9 @@
 
 ## 🔗 Live Demo & Repository
 
-- 🌐 **Live Site:** [zapshift.netlify.app](#) *(replace with your live URL)*
-- 💻 **Client Repo:** [GitHub — Client](https://github.com/mesbahtoha/Zap-Shift-Parcel-Delivery-Application)
-- 🖥️ **Server Repo:** *(add your server repo link here)*
+- 🌐 **Live Site:** [zapshift.railway.app](https://attractive-optimism-production.up.railway.app/)
+- 💻 **Client Repo:** [GitHub — Client](https://github.com/mesbahtoha/Percel-Web-Application/tree/main/zap-shift-client)
+- 🖥️ **Server Repo:** [GitHub — server](https://github.com/mesbahtoha/Percel-Web-Application/tree/main/zap-shift-server)
 
 ---
 
@@ -284,21 +284,17 @@ Contributions are welcome! Please fork the repository and submit a pull request.
 4. Push to the branch: `git push origin feature/AmazingFeature`
 5. Open a Pull Request
 
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
 ---
+
 
 ## 👨‍💻 Author
 
 **Mesbah Toha**
 - GitHub: [@mesbahtoha](https://github.com/mesbahtoha)
-- LinkedIn: *(add your LinkedIn profile)*
-- Email: *(add your contact email)*
+- LinkedIn: [@mesbahul-alam](https://www.linkedin.com/in/mesbahul-alam/)
+- Email: [mesbahulalam017@gmail.com](mesbahulalam017@gmail.com)
 
 ---
 
-<p align="center">Made with ❤️ by Mesbah Toha | ⚡ ZapShift — Delivering Fast, Delivering Smart</p>
+<p align="center">Made with ❤️ by Md.Mesbahul Alam | ⚡ ZapShift — Delivering Fast, Delivering Smart</p>
