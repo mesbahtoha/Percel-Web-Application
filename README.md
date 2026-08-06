@@ -12,7 +12,8 @@
 
 ## 🔗 Live Demo & Repository
 
-- 🌐 **Live Site:** [zapshift.railway.app](https://attractive-optimism-production.up.railway.app/)
+- 🌐 **Frontend (Live):** [https://percel-web-application-hlmu.vercel.app/](https://percel-web-application-hlmu.vercel.app/)
+- ⚙️ **Backend API (Live):** [https://percel-web-application.vercel.app/](https://percel-web-application.vercel.app/)
 - 💻 **Client Repo:** [GitHub — Client](https://github.com/mesbahtoha/Percel-Web-Application/tree/main/zap-shift-client)
 - 🖥️ **Server Repo:** [GitHub — server](https://github.com/mesbahtoha/Percel-Web-Application/tree/main/zap-shift-server)
 
@@ -24,7 +25,7 @@
 
 | Item | Value |
 |---|---|
-| 🔑 **Admin Route** | [http://localhost:5173/Md.Mesbhaul_Alam_Toha/](http://localhost:5173/Md.Mesbhaul_Alam_Toha/) |
+| 🔑 **Admin Route** | http://localhost:5173/Md.Mesbhaul_Alam_Toha/ (prod: https://percel-web-application-hlmu.vercel.app/Md.Mesbhaul_Alam_Toha/) |
 | 📧 **Email** | `alam242-50-012@diu.edu.bd` |
 | 🔒 **Password** | `toha4321` |
 
@@ -285,6 +286,10 @@ node index.js
 
 The frontend and backend live in the **same repository**. Vercel deploys them as **two separate projects** — each points to this repo with a different **Root Directory**.
 
+> ✅ **Currently deployed:**
+> - Frontend: https://percel-web-application-hlmu.vercel.app/
+> - Backend: https://percel-web-application.vercel.app/
+
 ### 1. Deploy the Backend (`zap-shift-server`)
 
 1. Go to [vercel.com](https://vercel.com) → **Add New Project** → import this repo
@@ -326,6 +331,8 @@ The frontend and backend live in the **same repository**. Vercel deploys them as
 
 ---
 
+## 💳 Pricing Structure
+
 | Parcel Type | Weight | Within City | Outside City |
 |---|---|---|---|
 | Document | Any | ৳60 | ৳80 |
@@ -337,10 +344,6 @@ The frontend and backend live in the **same repository**. Vercel deploys them as
 - ৳60% for outside city/district deliveries
 
 ---
-
-## 💳 Pricing Structure
-
-| Parcel Type | Weight | Within City | Outside City |
 
 ## 🔐 Security Features
 
