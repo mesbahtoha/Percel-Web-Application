@@ -1,22 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { RefreshCw, Search, CreditCard } from "lucide-react";
-import { getAuth } from "firebase/auth";
-
-// Base API URL – you may want to replace this with an environment variable later
-const API_BASE_URL = "https://percel-web-application-production.up.railway.app";
-
-/**
- * Retrieves the current Firebase user's ID token.
- * @throws {Error} If no user is logged in.
- */
-const getToken = async () => {
-  const auth = getAuth();
-  const currentUser = auth.currentUser;
-  if (!currentUser) {
-    throw new Error("You must login first.");
-  }
-  return await currentUser.getIdToken();
-};
+import { authHttpClient, getErrorMessage } from "../../../api/http";
 
 export const RiderPAyments = () => {
   // ── State ───────────────────────────────────────────────────────────────
@@ -42,21 +26,12 @@ export const RiderPAyments = () => {
       setError("");
       setSuccessMessage("");
 
-      const token = await getToken();
-      const res = await fetch(`${API_BASE_URL}/admin/rider-payments`, {
-        headers: { authorization: `Bearer ${token}` },
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.message || "Failed to load rider payments");
-      }
+      const { data } = await authHttpClient.get("/admin/rider-payments");
 
       // Ensure data is an array (API might return an object on error)
       setRiders(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err.message || "Failed to load rider payments");
+      setError(getErrorMessage(err, "Failed to load rider payments"));
       setRiders([]);
     } finally {
       setLoading(false);
@@ -82,21 +57,9 @@ export const RiderPAyments = () => {
       setError("");
       setSuccessMessage("");
 
-      const token = await getToken();
-      const res = await fetch(`${API_BASE_URL}/admin/rider-payments/pay`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ riderEmail }),
+      const { data } = await authHttpClient.patch("/admin/rider-payments/pay", {
+        riderEmail,
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.message || "Failed to pay rider");
-      }
 
       // Show success message with the amount paid
       setSuccessMessage(
@@ -106,7 +69,7 @@ export const RiderPAyments = () => {
       // Refresh the list to reflect updated due/paid amounts
       await fetchRiderPayments(true);
     } catch (err) {
-      setError(err.message || "Failed to pay rider");
+      setError(getErrorMessage(err, "Failed to pay rider"));
     } finally {
       setPayingRider(""); // Clear paying state
     }

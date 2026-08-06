@@ -2,21 +2,7 @@ import { useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { getAuth } from "firebase/auth";
-
-// Base API URL – hardcoded as per original, but you might want to use env variables
-const API_BASE_URL = "https://percel-web-application-production.up.railway.app";
-
-/**
- * Retrieves the current Firebase user's ID token.
- * Throws an error if the user is not logged in.
- */
-const getToken = async () => {
-  const auth = getAuth();
-  const currentUser = auth.currentUser;
-  if (!currentUser) throw new Error("You must login first");
-  return await currentUser.getIdToken();
-};
+import { authHttpClient } from "../../../api/http";
 
 /**
  * Generic fetcher for authenticated GET requests.
@@ -24,12 +10,7 @@ const getToken = async () => {
  * @returns {Promise<any>} Parsed JSON response
  */
 const fetchData = async (endpoint) => {
-  const token = await getToken();
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-    headers: { authorization: `Bearer ${token}` },
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data?.message || "API Error");
+  const { data } = await authHttpClient.get(endpoint);
   return data;
 };
 
@@ -43,20 +24,10 @@ const ParcelAssignForm = ({ parcel, riders, onSuccess }) => {
   // Mutation to assign rider
   const assignMutation = useMutation({
     mutationFn: async ({ riderId, message }) => {
-      const token = await getToken();
-      const res = await fetch(
-        `${API_BASE_URL}/admin/parcels/${parcel._id}/assign-rider`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ riderId, message }),
-        }
+      const { data } = await authHttpClient.patch(
+        `/admin/parcels/${parcel._id}/assign-rider`,
+        { riderId, message }
       );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to assign rider");
       return data;
     },
     onSuccess: () => {

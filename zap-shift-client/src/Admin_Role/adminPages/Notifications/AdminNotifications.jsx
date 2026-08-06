@@ -10,22 +10,7 @@ import {
   Wallet,
   UserCheck,
 } from "lucide-react";
-import { getAuth } from "firebase/auth";
-
-// API configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://percel-web-application-production.up.railway.app";
-
-/**
- * Retrieves Firebase auth token for authenticated API requests
- * @returns {Promise<string>} Firebase ID token
- * @throws {Error} If user is not authenticated
- */
-const getToken = async () => {
-  const auth = getAuth();
-  const currentUser = auth.currentUser;
-  if (!currentUser) throw new Error("You must login first.");
-  return await currentUser.getIdToken();
-};
+import { getErrorMessage, authHttpClient } from "../../../api/http";
 
 /**
  * AdminNotifications Component
@@ -54,15 +39,10 @@ export const AdminNotifications = () => {
     try {
       showRefresh ? setRefreshing(true) : setLoading(true);
       setError("");
-      const token = await getToken();
-      const res = await fetch(`${API_BASE_URL}/admin/notifications`, {
-        headers: { authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to fetch notifications");
+      const { data } = await authHttpClient.get("/admin/notifications");
       setNotifications(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err.message || "Failed to fetch notifications");
+      setError(getErrorMessage(err, "Failed to fetch notifications"));
       setNotifications([]);
     } finally {
       setLoading(false);
@@ -103,12 +83,7 @@ export const AdminNotifications = () => {
    */
   const markAsRead = async (id) => {
     try {
-      const token = await getToken();
-      const res = await fetch(`${API_BASE_URL}/admin/notifications/${id}/read`, {
-        method: "PATCH",
-        headers: { authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return;
+      await authHttpClient.patch(`/admin/notifications/${id}/read`);
 
       // Update local state
       setNotifications((prev) =>
@@ -130,15 +105,11 @@ export const AdminNotifications = () => {
     try {
       setMarkingAll(true);
       const unreadItems = notifications.filter((item) => !item.isRead);
-      const token = await getToken();
 
       // Mark each notification as read via API
       await Promise.all(
         unreadItems.map((item) =>
-          fetch(`${API_BASE_URL}/admin/notifications/${item._id}/read`, {
-            method: "PATCH",
-            headers: { authorization: `Bearer ${token}` },
-          })
+          authHttpClient.patch(`/admin/notifications/${item._id}/read`)
         )
       );
 

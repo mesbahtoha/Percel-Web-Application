@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getAuth } from "firebase/auth";
+import { authHttpClient } from "../../../api/http";
 import {
   CheckCircle2,
   Clock,
@@ -12,12 +12,6 @@ import {
   User,
   Wifi,
 } from "lucide-react";
-
-/**
- * Use env URL in production, but keep localhost as fallback for development.
- */
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://percel-web-application-production.up.railway.app";
 
 /**
  * Task statuses shown in the UI.
@@ -113,38 +107,11 @@ const formatSyncTime = (timestamp) => {
 };
 
 /**
- * Get Firebase token from the currently logged-in user.
- * This token is sent to the backend to verify the request.
- */
-const getToken = async () => {
-  const auth = getAuth();
-  const currentUser = auth.currentUser;
-
-  if (!currentUser) {
-    throw new Error("You must login first.");
-  }
-
-  return currentUser.getIdToken();
-};
-
-/**
  * Fetch rider task updates from the backend.
  * This function is kept outside the component so the UI stays cleaner.
  */
 const fetchRiderTaskUpdates = async () => {
-  const token = await getToken();
-
-  const response = await fetch(`${API_BASE_URL}/admin/rider-task-updates`, {
-    headers: {
-      authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data?.message || "Failed to fetch rider tasks");
-  }
+  const { data } = await authHttpClient.get("/admin/rider-task-updates");
 
   return Array.isArray(data) ? data : [];
 };

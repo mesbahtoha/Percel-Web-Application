@@ -1,11 +1,7 @@
-import axios from "axios";
-
-const axiosInstance = axios.create({
-    baseURL: 'https://percel-web-application-production.up.railway.app'
-})
+import { httpClient } from "../api/http";
 
 const useAxios = () => {
-    return axiosInstance;
-}
+  return httpClient;
+};
 
 export default useAxios;

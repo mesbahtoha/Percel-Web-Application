@@ -5,6 +5,7 @@ import { Login } from "../pages/Authentication/Login/Login";
 import { Register } from "../pages/Authentication/Register/Register";
 import Coverage from "../coverage/Coverage";
 import PrivateRoute from "../routes/PrivateRoute";
+import PrivateRouteAdmin from "../routes/PrivateRouteAdmin";
 import PublicRoute from "../routes/PublicRoute";
 import SendParcel from "../pages/SendParcel/SendParcel";
 import BeARider from "../pages/BeARider/BeARider";
@@ -176,9 +177,9 @@ export const router = createBrowserRouter([
   {
   path: "/Md.Mesbhaul_Alam_Toha",
   element: (
-    <PrivateRoute>
+    <PrivateRouteAdmin>
       <AdminLayout />
-    </PrivateRoute>
+    </PrivateRouteAdmin>
   ),
   children: [
     { index: true, element: <AdminOverview /> },

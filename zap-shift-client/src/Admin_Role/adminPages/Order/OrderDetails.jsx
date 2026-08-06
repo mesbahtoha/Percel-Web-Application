@@ -11,9 +11,7 @@ import {
   Weight,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { getAuth } from "firebase/auth";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://percel-web-application-production.up.railway.app";
+import { authHttpClient, getErrorMessage } from "../../../api/http";
 
 export const OrderDetails = () => {
   const { id } = useParams();
@@ -28,33 +26,11 @@ export const OrderDetails = () => {
       isRefresh ? setRefreshing(true) : setLoading(true);
       setError("");
 
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-
-      if (!currentUser) {
-        throw new Error("You must be logged in.");
-      }
-
-      const token = await currentUser.getIdToken();
-
-      const response = await fetch(`${API_BASE_URL}/admin/orders/${id}`, {
-        method: "GET",
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data?.message || `Request failed with status ${response.status}`
-        );
-      }
+      const { data } = await authHttpClient.get(`/admin/orders/${id}`);
 
       setDetails(data);
     } catch (err) {
-      setError(err.message || "Something went wrong");
+      setError(getErrorMessage(err, "Something went wrong"));
       setDetails(null);
     } finally {
       setLoading(false);

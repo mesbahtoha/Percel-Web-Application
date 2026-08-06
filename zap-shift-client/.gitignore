@@ -24,4 +24,7 @@ dist-ssr
 *.sw?
 
 .env.local
-# firebase.init.js
+.env
+.env.*
+!.env.example
+.vercel/

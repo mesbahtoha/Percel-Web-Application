@@ -8,10 +8,7 @@ import {
   User,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { getAuth } from "firebase/auth";
-
-// Base API URL – falls back to localhost for development
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://percel-web-application-production.up.railway.app";
+import { authHttpClient, getErrorMessage } from "../../../api/http";
 
 export const UserDetails = () => {
   const { id } = useParams(); // Get user ID from route params
@@ -36,27 +33,14 @@ export const UserDetails = () => {
       }
       setError("");
 
-      // Get current Firebase user and ID token
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error("You must be logged in.");
-
-      const token = await currentUser.getIdToken();
+      // Get current Firebase user and ID token (auto-attached by authHttpClient)
 
       // API call
-      const response = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
-        method: "GET",
-        headers: { authorization: `Bearer ${token}` },
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.message || `Request failed with status ${response.status}`);
-      }
+      const { data } = await authHttpClient.get(`/admin/users/${id}`);
 
       setDetails(data);
     } catch (err) {
-      setError(err.message || "Something went wrong");
+      setError(getErrorMessage(err, "Something went wrong"));
       setDetails(null);
     } finally {
       // Reset loading states

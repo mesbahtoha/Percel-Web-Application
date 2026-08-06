@@ -2,17 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Eye, RefreshCw, Search, UserCheck, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { getAuth } from "firebase/auth";
+import { authHttpClient } from "../../../api/http";
 import { riderProfileKey } from "../../../RiderRole/pages/Rider/RiderProfile";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://percel-web-application-production.up.railway.app";
-
-const getToken = async () => {
-  const auth = getAuth();
-  const user = auth.currentUser;
-  if (!user) throw new Error("You must be logged in.");
-  return await user.getIdToken();
-};
 
 // ─────────────────────────────────────────────
 export const ManageRiders = () => {
@@ -38,13 +29,9 @@ export const ManageRiders = () => {
   } = useQuery({
     queryKey: ["admin-riders", search],
     queryFn: async () => {
-      const token = await getToken();
-      const qs    = search ? `?search=${encodeURIComponent(search)}` : "";
-      const res   = await fetch(`${API_BASE_URL}/admin/riders${qs}`, {
-        headers: { authorization: `Bearer ${token}` },
+      const { data } = await authHttpClient.get("/admin/riders", {
+        params: search ? { search } : {},
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to fetch riders");
       return Array.isArray(data) ? data : [];
     },
     refetchInterval:      15_000,   // ✅ auto-poll every 15s
@@ -59,14 +46,9 @@ export const ManageRiders = () => {
     isPending: approvalPending,
   } = useMutation({
     mutationFn: async ({ riderId, approvalStatus }) => {
-      const token = await getToken();
-      const res   = await fetch(`${API_BASE_URL}/admin/riders/${riderId}/approval`, {
-        method:  "PATCH",
-        headers: { "Content-Type": "application/json", authorization: `Bearer ${token}` },
-        body:    JSON.stringify({ approvalStatus }),
+      const { data } = await authHttpClient.patch(`/admin/riders/${riderId}/approval`, {
+        approvalStatus,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to update approval");
       return { ...data, riderId, approvalStatus };
     },
     onSuccess: (_, variables) => {

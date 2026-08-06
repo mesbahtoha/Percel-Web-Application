@@ -10,19 +10,7 @@ import {
 } from "lucide-react";
 import { getAuth, signOut } from "firebase/auth";
 import { Link } from "react-router";
-
-const API_BASE_URL = "https://percel-web-application-production.up.railway.app";
-
-const getToken = async () => {
-  const auth = getAuth();
-  const currentUser = auth.currentUser;
-
-  if (!currentUser) {
-    throw new Error("You must login first.");
-  }
-
-  return await currentUser.getIdToken();
-};
+import { authHttpClient } from "../../api/http";
 
 const getInitials = (name = "", email = "") => {
   if (name?.trim()) {
@@ -68,19 +56,7 @@ export const AdminNavbar = ({
     try {
       setLoadingNotifications(true);
 
-      const token = await getToken();
-
-      const res = await fetch(`${API_BASE_URL}/admin/notifications`, {
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.message || "Failed to fetch notifications");
-      }
+      const { data } = await authHttpClient.get("/admin/notifications");
 
       setNotifications(Array.isArray(data) ? data.slice(0, 6) : []);
     } catch (error) {
@@ -131,16 +107,7 @@ export const AdminNavbar = ({
 
   const handleMarkAsRead = async (id) => {
     try {
-      const token = await getToken();
-
-      const res = await fetch(`${API_BASE_URL}/admin/notifications/${id}/read`, {
-        method: "PATCH",
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) return;
+      await authHttpClient.patch(`/admin/notifications/${id}/read`);
 
       setNotifications((prev) =>
         prev.map((item) =>

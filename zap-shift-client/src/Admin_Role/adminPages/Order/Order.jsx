@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Eye, RefreshCw, Search, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
-import { getAuth } from "firebase/auth";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://percel-web-application-production.up.railway.app";
+import { authHttpClient, getErrorMessage } from "../../../api/http";
 
 export const Order = () => {
   const [searchText, setSearchText] = useState("");
@@ -26,42 +24,13 @@ export const Order = () => {
       isRefresh ? setRefreshing(true) : setLoading(true);
       setError("");
 
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-
-      if (!currentUser) {
-        throw new Error("You must be logged in.");
-      }
-
-      const token = await currentUser.getIdToken();
-
-      const query = new URLSearchParams();
-      if (debouncedSearch) {
-        query.append("search", debouncedSearch);
-      }
-
-      const url = query.toString()
-        ? `${API_BASE_URL}/admin/orders?${query.toString()}`
-        : `${API_BASE_URL}/admin/orders`;
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
+      const { data } = await authHttpClient.get("/admin/orders", {
+        params: debouncedSearch ? { search: debouncedSearch } : {},
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data?.message || `Request failed with status ${response.status}`
-        );
-      }
 
       setOrders(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err.message || "Something went wrong");
+      setError(getErrorMessage(err, "Something went wrong"));
       setOrders([]);
     } finally {
       setLoading(false);

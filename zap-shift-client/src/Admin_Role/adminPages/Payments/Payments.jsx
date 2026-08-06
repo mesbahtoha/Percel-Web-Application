@@ -1,18 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { CreditCard, RefreshCw, Search, Wallet } from "lucide-react";
-import { getAuth } from "firebase/auth";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://percel-web-application-production.up.railway.app";
+import { authHttpClient, getErrorMessage } from "../../../api/http";
 
 // Default summary values used on initial load and on fetch errors
 const DEFAULT_SUMMARY = { totalCashIn: 0, paidCount: 0, pendingAdminReceive: 0 };
-
-// ─── Helper: get the current user's Firebase auth token ─────────────────────
-const getAuthToken = async () => {
-  const currentUser = getAuth().currentUser;
-  if (!currentUser) throw new Error("You must be logged in.");
-  return currentUser.getIdToken();
-};
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 export const Payments = () => {
@@ -41,18 +32,12 @@ export const Payments = () => {
       setError("");
       setSuccessMessage("");
 
-      const token = await getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/admin/payments`, {
-        headers: { authorization: `Bearer ${token}` },
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.message || `Request failed (${response.status})`);
+      const { data } = await authHttpClient.get("/admin/payments");
 
       setPayments(Array.isArray(data?.payments) ? data.payments : []);
       setSummary(data?.summary || DEFAULT_SUMMARY);
     } catch (err) {
-      setError(err.message || "Something went wrong");
+      setError(getErrorMessage(err, "Something went wrong"));
       setPayments([]);
       setSummary(DEFAULT_SUMMARY);
     } finally {
@@ -99,14 +84,7 @@ export const Payments = () => {
       setError("");
       setSuccessMessage("");
 
-      const token = await getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/admin/payments/${paymentId}/receive`, {
-        method: "PATCH",
-        headers: { authorization: `Bearer ${token}` },
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.message || `Request failed (${response.status})`);
+      await authHttpClient.patch(`/admin/payments/${paymentId}/receive`);
 
       // Update the specific payment's status locally (no need to re-fetch)
       setPayments((prev) =>
@@ -125,7 +103,7 @@ export const Payments = () => {
 
       setSuccessMessage("Payment marked as received successfully.");
     } catch (err) {
-      setError(err.message || "Failed to receive payment");
+      setError(getErrorMessage(err, "Failed to receive payment"));
     } finally {
       setReceivingId("");
     }

@@ -18,6 +18,37 @@
 
 ---
 
+## 🛠️ Admin Access
+
+> Use the credentials below to sign in and access the admin dashboard.
+
+| Item | Value |
+|---|---|
+| 🔑 **Admin Route** | [http://localhost:5173/Md.Mesbhaul_Alam_Toha/](http://localhost:5173/Md.Mesbhaul_Alam_Toha/) |
+| 📧 **Email** | `alam242-50-012@diu.edu.bd` |
+| 🔒 **Password** | `toha4321` |
+
+### Admin Routes (local dev)
+
+| Route | Description |
+|---|---|
+| `/Md.Mesbhaul_Alam_Toha/` | Admin Overview (dashboard) |
+| `/Md.Mesbhaul_Alam_Toha/overview` | Overview (same as dashboard) |
+| `/Md.Mesbhaul_Alam_Toha/manage-user` | Manage users |
+| `/Md.Mesbhaul_Alam_Toha/manage-user/:id` | User details |
+| `/Md.Mesbhaul_Alam_Toha/orders` | All orders |
+| `/Md.Mesbhaul_Alam_Toha/orders/:id` | Order details |
+| `/Md.Mesbhaul_Alam_Toha/parcel-tracking` | Parcel tracking |
+| `/Md.Mesbhaul_Alam_Toha/payment-receive` | Payments received |
+| `/Md.Mesbhaul_Alam_Toha/manage-rider` | Manage riders |
+| `/Md.Mesbhaul_Alam_Toha/manage-rider/:id` | Rider details |
+| `/Md.Mesbhaul_Alam_Toha/rider-assign` | Assign riders to parcels |
+| `/Md.Mesbhaul_Alam_Toha/rider-payment` | Rider payments |
+| `/Md.Mesbhaul_Alam_Toha/rider-task-update` | Rider task updates |
+| `/Md.Mesbhaul_Alam_Toha/notifications` | Admin notifications |
+
+---
+
 ## 📌 Project Overview
 
 **ZapShift** is a modern, full-stack parcel delivery web application. It eliminates manual logistics processes by providing a streamlined platform where users can book parcels, riders manage deliveries, and admins oversee the entire operation with real-time insights.
@@ -132,31 +163,60 @@ Within City?
 ## 🏗️ Project Structure
 
 ```
-zap-shift/
-├── client/                     # React Frontend
+Percel-Web-Application/
+├── zap-shift-client/                     # React Frontend (Vite)
 │   ├── public/
+│   │   ├── serviceCenter.json            # 64 district service center data (map markers)
+│   │   └── delivery-van.png              # Favicon
 │   ├── src/
-│   │   ├── assets/             # Images, fonts, icons
-│   │   ├── components/         # Reusable UI components
-│   │   ├── pages/              # Route-level page components
-│   │   │   ├── Home/
-│   │   │   ├── Dashboard/
-│   │   │   │   ├── User/
-│   │   │   │   ├── Rider/
-│   │   │   │   └── Admin/
-│   │   │   └── Auth/
-│   │   ├── hooks/              # Custom React hooks
-│   │   ├── context/            # React Context providers
-│   │   ├── routes/             # Protected route configuration
-│   │   └── index.css           # Tailwind + Urbanist font import
+│   │   ├── Admin_Role/                   # Admin dashboard
+│   │   │   ├── adminLayouts/             # AdminLayout (sidebar + navbar shell)
+│   │   │   ├── adminPages/               # Overview, ManageUsers, Orders, Payments,
+│   │   │   │                             #   ParcelTracking, ManageRiders, AssignRider,
+│   │   │   │                             #   RiderPayments, RiderTaskUpdates, Notifications
+│   │   │   └── AdminComponents/          # Shared admin UI (AdminNavbar, etc.)
+│   │   ├── RiderRole/                    # Rider dashboard
+│   │   │   ├── layouts/                  # RiderDashboardLayout
+│   │   │   ├── pages/Rider/              # Overview, Tasks, Earnings, Profile, Notification
+│   │   │   ├── components/               # Shared rider UI
+│   │   │   └── routes/                   # PrivateRouteRider
+│   │   ├── api/                          # API client modules (axios instances)
+│   │   ├── assets/                       # Images, brands, illustrations
+│   │   ├── context/AuthContext/          # Firebase auth provider
+│   │   ├── coverage/                     # Coverage page + Leaflet map
+│   │   │   ├── Coverage.jsx              # Search + district selection UI
+│   │   │   └── BangladeshMap.jsx         # Leaflet MapContainer with 64 markers
+│   │   ├── firebase/                     # Firebase initialization & config
+│   │   ├── hooks/                        # useAxios, useAxiosSecure, etc.
+│   │   ├── layouts/                      # RootLayout, DashboardLayout
+│   │   ├── pages/                        # Route-level pages
+│   │   │   ├── Home/                     # Landing page sections
+│   │   │   ├── Authentication/           # Login, Register
+│   │   │   ├── Dashboard/                # MyParcels, AddParcel, Payment, TrackParcel...
+│   │   │   ├── SendParcel/               # Send parcel form
+│   │   │   ├── BeARider/                 # Rider application
+│   │   │   ├── About/                    # About page
+│   │   │   └── shared/                   # Navbar, Footer, Profile, ProfastLogo
+│   │   ├── router/router.jsx             # All application routes (single source)
+│   │   ├── routes/                       # PrivateRoute, PublicRoute, PrivateRouteAdmin
+│   │   ├── main.jsx                      # App entry (RouterProvider + providers)
+│   │   └── index.css                     # Tailwind v4 + Urbanist font import
 │   └── package.json
 │
-└── server/                     # Node.js Backend
-    ├── routes/                 # API route handlers
-    ├── middleware/             # JWT auth middleware
-    ├── config/                 # DB & Firebase config
-    ├── .env                    # Environment variables
-    └── index.js                # Server entry point
+└── zap-shift-server/                     # Node.js Backend
+    ├── src/
+    │   ├── app.js                        # Express app setup (CORS, JSON, routes)
+    │   ├── server.js                     # Server entry point
+    │   ├── config/                       # db, env, firebase, mailer, stripe
+    │   ├── controllers/                  # auth, parcel, payment, rider, user, admin...
+    │   ├── middlewares/                  # auth (JWT), errorHandler
+    │   ├── routes/                       # API route handlers
+    │   ├── services/                     # mail, notification, riderTask, stripe
+    │   └── utils/                        # ApiError, helpers
+    ├── scripts/seed-admin.js             # Seed admin account
+    ├── convertKey.js                     # Firebase service-account key converter
+    ├── .env.example                      # Env template
+    └── package.json
 ```
 
 ---
@@ -172,13 +232,13 @@ zap-shift/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/mesbahtoha/Zap-Shift-Parcel-Delivery-Application.git
-cd Zap-Shift-Parcel-Delivery-Application
+git clone https://github.com/mesbahtoha/Percel-Web-Application.git
+cd Percel-Web-Application
 ```
 
 ### 2. Frontend Setup
 ```bash
-cd client
+cd zap-shift-client
 npm install
 ```
 
@@ -200,7 +260,7 @@ npm run dev
 
 ### 3. Backend Setup
 ```bash
-cd server
+cd zap-shift-server
 npm install
 ```
 
@@ -221,7 +281,50 @@ node index.js
 
 ---
 
-## 💳 Pricing Structure
+## ▲ Vercel Deployment (Monorepo)
+
+The frontend and backend live in the **same repository**. Vercel deploys them as **two separate projects** — each points to this repo with a different **Root Directory**.
+
+### 1. Deploy the Backend (`zap-shift-server`)
+
+1. Go to [vercel.com](https://vercel.com) → **Add New Project** → import this repo
+2. Set **Root Directory** to `zap-shift-server` (detected automatically by `vercel.json`)
+3. Add these **Environment Variables** (Settings → Environment Variables):
+
+   | Variable | Value |
+   |---|---|
+   | `MONGODB_URI` | MongoDB connection string |
+   | `DB_USER` / `DB_PASSWORD` / `DB_NAME` | *(optional)* used when `MONGODB_URI` is empty |
+   | `CLIENT_URL` | Frontend URL (e.g. `https://zap-shift-client.vercel.app`) — allowed by CORS |
+   | `FB_SERVICE_KEY` | Firebase Admin service-account JSON (base64 encoded) |
+   | `STRIPE_SECRET_KEY` | Stripe secret key |
+   | `OTP_JWT_SECRET` | JWT secret for OTP tokens |
+   | `EMAIL_SENDER` / `EMAIL_PASS` | Gmail SMTP credentials for OTP emails |
+
+4. Click **Deploy**. The Express app runs as a serverless function via `api/index.js` (all routes → one lambda, MongoDB connection is cached across warm invocations).
+
+### 2. Deploy the Frontend (`zap-shift-client`)
+
+1. **Add New Project** → import the same repo
+2. Set **Root Directory** to `zap-shift-client`
+3. Add these **Environment Variables**:
+
+   | Variable | Value |
+   |---|---|
+   | `VITE_API_URL` | Deployed backend URL (e.g. `https://zap-shift-server.vercel.app`) |
+   | `VITE_apiKey` … `VITE_appId` | Firebase web-app config (same names as `.env.example`) |
+   | `VITE_img_upload_key` | ImgBB API key |
+   | `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key |
+
+4. Click **Deploy**. `vercel.json` enables SPA rewrites, so deep links like `/coverage` and `/Md.Mesbhaul_Alam_Toha/` work on refresh.
+
+### 3. Post-deployment checks
+
+- Update `CLIENT_URL` on the backend if the frontend URL changes (Vercel preview deployments get new URLs)
+- Add the deployed frontend domain to **Firebase Authentication** (Authorized domains)
+- The production URL differs from localhost — admin sign-in credentials remain the same
+
+---
 
 | Parcel Type | Weight | Within City | Outside City |
 |---|---|---|---|
@@ -234,6 +337,10 @@ node index.js
 - ৳60% for outside city/district deliveries
 
 ---
+
+## 💳 Pricing Structure
+
+| Parcel Type | Weight | Within City | Outside City |
 
 ## 🔐 Security Features
 
@@ -271,6 +378,22 @@ node index.js
   "lucide-react": "latest"
 }
 ```
+
+---
+
+## 📝 Recent Changes
+
+### 🗺️ Fixed: Coverage map not showing (Aug 2026)
+
+**Problem:** On `/coverage`, the Leaflet map (`src/coverage/BangladeshMap.jsx`) rendered nothing — the map area appeared blank.
+
+**Root cause:** `.gitignore` contained a `coverage/` entry. Tailwind CSS v4's automatic source detection **skips files listed in `.gitignore`**, so `src/coverage/*.jsx` was never scanned for utility classes. As a result, the map container's height utilities (`h-[400px] sm:h-[500px] md:h-[600px]`) were missing from the compiled CSS and the container collapsed to `0px` height, hiding the map.
+
+**Changes made:**
+- `zap-shift-client/.gitignore` — removed the `coverage/` entry so Tailwind scans `src/coverage/`
+- Restarted the Vite dev server to regenerate the CSS with the map height utilities
+
+**How to verify:** Open http://localhost:5173/coverage — you should see the Bangladesh map with 64 district markers, and searching a district zooms the map to that location.
 
 ---
 

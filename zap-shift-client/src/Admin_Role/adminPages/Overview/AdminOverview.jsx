@@ -9,21 +9,7 @@ import {
   CheckCircle2,
   RefreshCw,
 } from "lucide-react";
-import { getAuth } from "firebase/auth";
-
-// Base API URL – falls back to localhost for development
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://percel-web-application-production.up.railway.app";
-
-/**
- * Retrieves the current Firebase user's ID token.
- * @throws {Error} If no user is logged in.
- */
-const getToken = async () => {
-  const auth = getAuth();
-  const user = auth.currentUser;
-  if (!user) throw new Error("You must login first.");
-  return await user.getIdToken();
-};
+import { authHttpClient } from "../../../api/http";
 
 export const AdminOverview = () => {
   // ── State ───────────────────────────────────────────────────────────────
@@ -42,15 +28,7 @@ export const AdminOverview = () => {
         setLoading(true);
       }
 
-      const token = await getToken();
-      const res = await fetch(`${API_BASE_URL}/admin/dashboard-overview`, {
-        headers: { authorization: `Bearer ${token}` },
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.message || "Failed to load dashboard");
-      }
+      const { data } = await authHttpClient.get("/admin/dashboard-overview");
 
       // Update state with fetched data
       setStats(data.stats || {});

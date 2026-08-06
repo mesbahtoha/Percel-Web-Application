@@ -1,11 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { RefreshCw, Search, Truck } from "lucide-react";
-import { getAuth } from "firebase/auth";
+import { authHttpClient, getErrorMessage } from "../../../api/http";
 import { userParcelsKey } from "../../../pages/Dashboard/TrackParcel/TrackParcel";
-
-// Base URL for API calls – fallback to localhost during development
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://percel-web-application-production.up.railway.app";
 
 // All possible delivery statuses that an admin can set
 const STATUS_OPTIONS = [
@@ -16,16 +13,6 @@ const STATUS_OPTIONS = [
   "out for delivery",
   "completed",
 ];
-
-/**
- * Helper: retrieves the current Firebase user's ID token.
- * Throws if no user is logged in.
- */
-const getToken = async () => {
-  const user = getAuth().currentUser;
-  if (!user) throw new Error("You must be logged in.");
-  return user.getIdToken();
-};
 
 export const ParcelTracking = () => {
   const queryClient = useQueryClient();
@@ -54,17 +41,9 @@ export const ParcelTracking = () => {
     // Query key includes search term so it refetches when debouncedSearch changes
     queryKey: ["admin-parcel-tracking", debouncedSearch],
     queryFn: async () => {
-      const token = await getToken();
-      const queryString = debouncedSearch
-        ? `?search=${encodeURIComponent(debouncedSearch)}`
-        : "";
-
-      const res = await fetch(`${API_BASE_URL}/admin/parcel-tracking${queryString}`, {
-        headers: { authorization: `Bearer ${token}` },
+      const { data } = await authHttpClient.get("/admin/parcel-tracking", {
+        params: debouncedSearch ? { search: debouncedSearch } : {},
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to fetch parcels");
 
       // Ensure we always return an array
       return Array.isArray(data) ? data : [];
@@ -103,22 +82,10 @@ export const ParcelTracking = () => {
     variables: updatingVars, // contains the parcelId currently being updated
   } = useMutation({
     mutationFn: async ({ parcelId, status }) => {
-      const token = await getToken();
-
-      const res = await fetch(
-        `${API_BASE_URL}/admin/parcel-tracking/${parcelId}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status }),
-        }
+      const { data } = await authHttpClient.patch(
+        `/admin/parcel-tracking/${parcelId}/status`,
+        { status }
       );
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to update");
       return data;
     },
 
@@ -158,7 +125,7 @@ export const ParcelTracking = () => {
           context.previousParcels
         );
       }
-      setErrorMsg(err.message || "Failed to update status");
+      setErrorMsg(getErrorMessage(err, "Failed to update status"));
     },
 
     onSuccess: (_data, { parcelId, userEmail }) => {
