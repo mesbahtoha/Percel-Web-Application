@@ -6,6 +6,7 @@ import useAuth from "../../../hooks/useAuth";
 import axios from "axios";
 import { useState } from "react";
 import useAxios from "../../../hooks/useAxios";
+import Swal from "sweetalert2";
 
 export const Register = () => {
   const {
@@ -17,12 +18,15 @@ export const Register = () => {
   const { createUser, signInwithGoogle, updateUserProfile } = useAuth();
   const [profilePic, setProfilePic] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const axiosInstance = useAxios();
   const navigate = useNavigate();
 
   const onSubmit = async (data) => {
     try {
+      setSubmitting(true);
+
       await createUser(data.email, data.password);
 
       const userInfo = {
@@ -40,14 +44,24 @@ export const Register = () => {
       });
 
       navigate("/dashboard/overview", { replace: true });
-    } catch (error) {
-      console.error("Register error:", error);
-      alert("Already Registered with this Email");
+    } catch {
+      Swal.fire({
+        icon: "error",
+        title: "Registration failed",
+        text: "An account already exists with this email. Please login instead.",
+        background: "#1f2937",
+        color: "#f9fafb",
+        confirmButtonColor: "#84cc16",
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     try {
+      setSubmitting(true);
+
       const result = await signInwithGoogle();
       const user = result.user;
 
@@ -61,8 +75,17 @@ export const Register = () => {
       await axiosInstance.post("/users", userInfo);
 
       navigate("/dashboard/overview", { replace: true });
-    } catch (error) {
-      console.error("Google sign-in error:", error);
+    } catch {
+      Swal.fire({
+        icon: "error",
+        title: "Google sign-in failed",
+        text: "Something went wrong. Please try again.",
+        background: "#1f2937",
+        color: "#f9fafb",
+        confirmButtonColor: "#84cc16",
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -80,8 +103,15 @@ export const Register = () => {
       const res = await axios.post(imgUploadURL, formData);
 
       setProfilePic(res.data.data.url);
-    } catch (error) {
-      console.error("Image upload error:", error);
+    } catch {
+      Swal.fire({
+        icon: "error",
+        title: "Image upload failed",
+        text: "Could not upload your picture. Try again.",
+        background: "#1f2937",
+        color: "#f9fafb",
+        confirmButtonColor: "#84cc16",
+      });
     } finally {
       setUploading(false);
     }
@@ -135,11 +165,20 @@ export const Register = () => {
                 Name
               </label>
               <input
-                {...register("name", { required: true })}
+                {...register("name", {
+                  required: "Name is required",
+                  minLength: {
+                    value: 2,
+                    message: "Name must be at least 2 characters",
+                  },
+                })}
                 type="text"
                 placeholder="Name"
                 className="w-full border border-base-300 bg-base-100 text-base-content rounded-lg px-4 py-2 placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary"
               />
+              {errors.name && (
+                <p className="text-error text-sm mt-1">{errors.name.message}</p>
+              )}
             </div>
 
             <div>
@@ -147,11 +186,22 @@ export const Register = () => {
                 Email
               </label>
               <input
-                {...register("email", { required: true })}
+                {...register("email", {
+                  required: "Email is required",
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: "Enter a valid email address",
+                  },
+                })}
                 type="email"
                 placeholder="Email"
                 className="w-full border border-base-300 bg-base-100 text-base-content rounded-lg px-4 py-2 placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary"
               />
+              {errors.email && (
+                <p className="text-error text-sm mt-1">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -160,28 +210,37 @@ export const Register = () => {
               </label>
               <input
                 {...register("password", {
-                  required: true,
-                  minLength: 6,
+                  required: "Password is required",
+                  minLength: {
+                    value: 6,
+                    message: "Password must be 6 characters or longer",
+                  },
                 })}
                 type="password"
                 placeholder="Password"
                 className="w-full border border-base-300 bg-base-100 text-base-content rounded-lg px-4 py-2 placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              {errors.password?.type === "required" && (
-                <p className="text-error text-sm">Password is required</p>
-              )}
-              {errors.password?.type === "minLength" && (
-                <p className="text-error text-sm">
-                  Password must be 6 characters or longer
+              {errors.password && (
+                <p className="text-error text-sm mt-1">
+                  {errors.password.message}
                 </p>
               )}
             </div>
 
             <button
-              disabled={uploading}
+              disabled={uploading || submitting}
               className="btn btn-primary w-full rounded-lg disabled:opacity-50"
             >
-              {uploading ? "Uploading image..." : "Register"}
+              {submitting ? (
+                <>
+                  <span className="loading loading-spinner loading-sm"></span>
+                  Creating account...
+                </>
+              ) : uploading ? (
+                "Uploading image..."
+              ) : (
+                "Register"
+              )}
             </button>
           </form>
 
@@ -196,6 +255,7 @@ export const Register = () => {
 
           <button
             onClick={handleGoogleSignIn}
+            disabled={submitting}
             className="w-full flex items-center justify-center gap-3 bg-base-100 border border-base-300 hover:bg-base-200 py-3 rounded-lg text-base-content font-semibold transition duration-300 shadow-sm"
           >
             <img

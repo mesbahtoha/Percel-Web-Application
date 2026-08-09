@@ -10,11 +10,13 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { authHttpClient } from "../../../api/http";
+import { BarChart, LineChart, DonutChart } from "../../AdminComponents/AdminCharts";
 
 export const AdminOverview = () => {
   // ── State ───────────────────────────────────────────────────────────────
   const [stats, setStats] = useState({});               // Dashboard statistics
   const [recentActivities, setRecentActivities] = useState([]); // Notifications
+  const [chartData, setChartData] = useState({});       // Chart datasets
   const [loading, setLoading] = useState(true);          // Initial loading
   const [refreshing, setRefreshing] = useState(false);   // Manual refresh indicator
 
@@ -33,7 +35,8 @@ export const AdminOverview = () => {
       // Update state with fetched data
       setStats(data.stats || {});
       setRecentActivities(data.notifications || []);
-    } catch (error) {
+      setChartData(data.chartData || {});
+    } catch {
       // Errors are silently ignored (no UI feedback) – matches original behaviour.
       // (Original had console.error, which we removed as requested.)
     } finally {
@@ -149,6 +152,24 @@ export const AdminOverview = () => {
             </div>
           );
         })}
+      </div>
+
+      {/* Charts: parcel status + cash-in trend + user share */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
+        <BarChart data={chartData.deliveryStatusCounts} title="Parcels by Delivery Status" />
+        <LineChart
+          data={chartData.cashInTrend}
+          title="Cash-in — Last 7 Days (৳)"
+          formatValue={(v) => (Number(v) >= 1000 ? `${(Number(v) / 1000).toFixed(1)}k` : v)}
+        />
+        <DonutChart
+          data={[
+            { name: "Users", value: stats.totalUsers || 0 },
+            { name: "Riders", value: stats.totalRiders || 0 },
+            { name: "Parcels", value: stats.totalParcels || 0 },
+          ]}
+          title="Platform Share"
+        />
       </div>
 
       {/* Bottom row: quick summary + notifications */}

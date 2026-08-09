@@ -29,7 +29,7 @@ export const createUser = async (req, res) => {
 
   const userDoc = {
     ...req.body,
-    role: req.body.role || "user",
+    role: "user",
     picture: picture || "",
     created_at: now(),
     last_login: now(),

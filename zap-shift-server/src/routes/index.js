@@ -8,6 +8,7 @@ import riderTaskRoutes from "./riderTask.routes.js";
 import riderEarningRoutes from "./riderEarning.routes.js";
 import adminRoutes from "./admin.routes.js";
 import notificationRoutes from "./notification.routes.js";
+import contactRoutes from "./contact.routes.js";
 
 const router = Router();
 
@@ -25,5 +26,6 @@ router.use("/", riderEarningRoutes);
 router.use("/admin", adminRoutes);
 router.use("/rider", notificationRoutes);
 router.use("/user", notificationRoutes);
+router.use("/contact", contactRoutes);
 
 export default router;

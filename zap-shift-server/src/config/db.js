@@ -61,4 +61,5 @@ export const collections = {
   riderTasks: () => getCollection("riderTasks"),
   riderEarnings: () => getCollection("riderEarnings"),
   notifications: () => getCollection("notifications"),
+  contacts: () => getCollection("contacts"),
 };

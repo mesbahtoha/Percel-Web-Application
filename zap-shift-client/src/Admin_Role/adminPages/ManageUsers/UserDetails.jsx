@@ -90,7 +90,7 @@ export const UserDetails = () => {
         <p className="text-sm text-slate-500">{error}</p>
         <div className="flex gap-3">
           <Link
-            to="/Md.Mesbhaul_Alam_Toha/manage-user"
+            to="/admin/manage-user"
             className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Back
@@ -115,7 +115,7 @@ export const UserDetails = () => {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <Link
-            to="/Md.Mesbhaul_Alam_Toha/manage-user"
+            to="/admin/manage-user"
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50"
             aria-label="Go back to user management"
           >

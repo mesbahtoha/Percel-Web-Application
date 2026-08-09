@@ -195,7 +195,7 @@ export const ManageRiders = () => {
                       </button>
 
                       <Link
-                        to={`/Md.Mesbhaul_Alam_Toha/manage-rider/${rider._id}`}
+                        to={`/admin/manage-rider/${rider._id}`}
                         className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
                       >
                         <Eye size={16} />

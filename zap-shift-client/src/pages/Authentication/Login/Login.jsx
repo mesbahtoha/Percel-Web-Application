@@ -5,6 +5,10 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import useAuth from "../../../hooks/useAuth";
 import { useState } from "react";
 import Swal from "sweetalert2";
+import { httpClient } from "../../../api/http";
+
+const ADMIN_DEMO = { email: "admin@gmail.com", password: "admin123" };
+const USER_DEMO = { email: "user@gmail.com", password: "user123" };
 
 export const Login = () => {
   const location = useLocation();
@@ -16,50 +20,73 @@ export const Login = () => {
   const [loginError, setLoginError] = useState("");
   const [resetMessage, setResetMessage] = useState("");
   const [resetError, setResetError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const {
     register,
     handleSubmit,
     getValues,
+    setValue,
     formState: { errors },
   } = useForm();
 
   const { signInwithGoogle, signIn, resetPassword } = useAuth();
 
-  // const handleGoogleSignIn = async () => {
-  //   try {
-  //     const result = await signInwithGoogle();
-  //     const user = result.user;
+  const redirectByRole = async (email) => {
+    try {
+      const { data } = await httpClient.get(`/users/role/${email}`);
+      if (data.isAdmin || data.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else if (data.isRider || data.role === "rider") {
+        navigate("/dashboard/rider/overview", { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
+    } catch {
+      navigate(from, { replace: true });
+    }
+  };
 
-  //     const userInfo = {
-  //       name: user.displayName || "No Name",
-  //       email: user.email,
-  //       role: "user",
-  //       picture: user.photoURL || "",
-  //     };
+  const handleGoogleSignIn = async () => {
+    try {
+      setSubmitting(true);
+      setLoginError("");
+      const result = await signInwithGoogle();
+      const user = result.user;
 
-  //     await axiosInstance.post("/users", userInfo);
+      const userInfo = {
+        name: user.displayName || "No Name",
+        email: user.email,
+        role: "user",
+        picture: user.photoURL || "",
+      };
 
-  //     navigate("/dashboard/overview", { replace: true });
-  //   } catch (error) {
-  //     console.error("Google sign-in error:", error);
-  //   }
-  // };
+      await httpClient.post("/users", userInfo);
+      await redirectByRole(user.email);
+    } catch {
+      setLoginError("Google sign-in failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDemoLogin = (demo) => {
+    setValue("email", demo.email, { shouldValidate: true });
+    setValue("password", demo.password, { shouldValidate: true });
+    handleSubmit(onSubmit)();
+  };
 
   const onSubmit = (data) => {
     setLoginError("");
     setResetMessage("");
     setResetError("");
-
-    // console.log("Login form data:", data);
+    setSubmitting(true);
 
     signIn(data.email, data.password)
-      .then((result) => {
-        // console.log("Logged in user:", result.user);
-        navigate(from, { replace: true });
+      .then(async (result) => {
+        await redirectByRole(result.user.email);
       })
-      .catch((error) => {
-        // console.error("Login error:", error.message);
+      .catch(() => {
         setLoginError("Invalid email or password.");
         Swal.fire({
           icon: "error",
@@ -69,7 +96,8 @@ export const Login = () => {
           color: "#f9fafb",
           confirmButtonColor: "#84cc16",
         });
-      });
+      })
+      .finally(() => setSubmitting(false));
   };
 
   const handleForgetPassword = async () => {
@@ -78,7 +106,6 @@ export const Login = () => {
       setResetError("");
 
       const email = getValues("email");
-      // console.log("Reset password email:", email);
 
       if (!email) {
         setResetError("Please enter your email first.");
@@ -89,9 +116,7 @@ export const Login = () => {
       setResetMessage(
         "Password reset email sent. Please check your inbox or spam."
       );
-      // console.log("Password reset email sent");
     } catch (error) {
-      // console.error("Reset password error:", error.message);
       setResetError(error.message);
     }
   };
@@ -122,12 +147,20 @@ export const Login = () => {
                 Email
               </label>
               <input
-                {...register("email")}
+                {...register("email", {
+                  required: "Email is required",
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: "Enter a valid email address",
+                  },
+                })}
                 type="email"
                 placeholder="Email"
-                required
                 className="w-full border border-base-300 bg-base-100 text-base-content rounded-lg px-4 py-2 placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary"
               />
+              {errors.email && (
+                <p className="text-error mt-1">{errors.email.message}</p>
+              )}
             </div>
 
             <div>
@@ -138,12 +171,14 @@ export const Login = () => {
               <div className="relative">
                 <input
                   {...register("password", {
-                    required: true,
-                    minLength: 6,
+                    required: "Password is required",
+                    minLength: {
+                      value: 6,
+                      message: "Password must be 6 characters or longer",
+                    },
                   })}
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
-                  required
                   className="w-full border border-base-300 bg-base-100 text-base-content rounded-lg px-4 py-2 pr-16 placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary"
                 />
 
@@ -156,13 +191,8 @@ export const Login = () => {
                 </button>
               </div>
 
-              {errors.password?.type === "required" && (
-                <p className="text-error mt-1">Password is required</p>
-              )}
-              {errors.password?.type === "minLength" && (
-                <p className="text-error mt-1">
-                  Password must be 6 characters or longer
-                </p>
+              {errors.password && (
+                <p className="text-error mt-1">{errors.password.message}</p>
               )}
             </div>
 
@@ -184,22 +214,35 @@ export const Login = () => {
 
             {loginError && <p className="text-sm text-error">{loginError}</p>}
 
-            <button className="btn btn-primary w-full rounded-lg">
-              Login
+            <button
+              className="btn btn-primary w-full rounded-lg"
+              disabled={submitting}
+            >
+              {submitting ? (
+                <>
+                  <span className="loading loading-spinner loading-sm"></span>
+                  Signing in...
+                </>
+              ) : (
+                "Login"
+              )}
             </button>
           </form>
 
           <p className="mt-4 text-sm text-base-content/70">
-            Don’t have any account?{" "}
+            Don't have any account?{" "}
             <Link to="/register" className="text-primary hover:underline">
               Register
             </Link>
           </p>
 
-          {/* <div className="my-5 text-center text-base-content/50 text-sm">Or</div>
+          <div className="divider my-5 text-base-content/50 text-sm">
+            Or login with
+          </div>
 
           <button
             onClick={handleGoogleSignIn}
+            disabled={submitting}
             className="w-full flex items-center justify-center gap-3 bg-base-100 border border-base-300 hover:bg-base-200 py-3 rounded-lg text-base-content font-semibold transition duration-300 shadow-sm"
           >
             <img
@@ -208,7 +251,30 @@ export const Login = () => {
               className="w-5 h-5"
             />
             Login with Google
-          </button> */}
+          </button>
+
+          <div className="my-5 text-center text-base-content/50 text-sm">
+            Try a demo account
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => handleDemoLogin(ADMIN_DEMO)}
+              disabled={submitting}
+              className="btn btn-sm btn-outline btn-primary"
+            >
+              Admin Demo
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDemoLogin(USER_DEMO)}
+              disabled={submitting}
+              className="btn btn-sm btn-outline"
+            >
+              User Demo
+            </button>
+          </div>
         </div>
       </div>
 

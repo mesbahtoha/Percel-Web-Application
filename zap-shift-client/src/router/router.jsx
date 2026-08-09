@@ -40,6 +40,7 @@ import { RiderDetails } from "../Admin_Role/adminPages/ManageRiders/RiderDetails
 import { RiderNotification } from "../RiderRole/pages/Rider/RiderNotification";
 import { TrackParcel } from "../pages/Dashboard/TrackParcel/TrackParcel";
 import About from "../pages/About/About";
+import Contact from "../pages/Contact/Contact";
 
 export const router = createBrowserRouter([
   {
@@ -80,6 +81,10 @@ export const router = createBrowserRouter([
     {
       path: "about",
       Component: About
+    },
+    {
+      path: "contact",
+      Component: Contact
     }
   ],
 },
@@ -175,7 +180,7 @@ export const router = createBrowserRouter([
   },
 
   {
-  path: "/Md.Mesbhaul_Alam_Toha",
+  path: "/admin",
   element: (
     <PrivateRouteAdmin>
       <AdminLayout />

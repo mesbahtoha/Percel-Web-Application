@@ -589,6 +589,58 @@ export const getDashboardOverview = async (req, res) => {
     .limit(6)
     .toArray();
 
+  // Chart: parcel delivery status distribution (bar chart)
+  const statusNames = [
+    "pending",
+    "assigned",
+    "taken",
+    "shifted",
+    "out for delivery",
+    "completed",
+    "cancelled",
+  ];
+  const statusCounts = await Promise.all(
+    statusNames.map((status) =>
+      collections.parcels().countDocuments({ deliveryStatus: status })
+    )
+  );
+  const deliveryStatusCounts = statusNames
+    .map((name, i) => ({
+      name: name.replace(/\b\w/g, (c) => c.toUpperCase()),
+      count: statusCounts[i],
+    }))
+    .filter((item) => item.count > 0);
+
+  // Chart: cash-in trend for the last 7 days (line chart)
+  const dayLabels = [];
+  const dayMap = new Map();
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - i);
+    const key = date.toISOString().split("T")[0];
+    dayLabels.push({
+      date: key,
+      label: date.toLocaleDateString("en-US", { weekday: "short" }),
+    });
+    dayMap.set(key, 0);
+  }
+  for (const payment of payments) {
+    const paidAt = payment.paidAt || payment.createdAt;
+    if (!paidAt) continue;
+    const d = new Date(paidAt);
+    if (Number.isNaN(d.getTime())) continue;
+    const key = d.toISOString().split("T")[0];
+    if (dayMap.has(key)) {
+      dayMap.set(key, dayMap.get(key) + Number(payment.amountTaka || 0));
+    }
+  }
+  const cashInTrend = dayLabels.map(({ date, label }) => ({
+    date,
+    label,
+    amount: dayMap.get(date) || 0,
+  }));
+
   res.send({
     stats: {
       totalUsers,
@@ -603,5 +655,9 @@ export const getDashboardOverview = async (req, res) => {
       totalCashOut,
     },
     notifications,
+    chartData: {
+      deliveryStatusCounts,
+      cashInTrend,
+    },
   });
 };

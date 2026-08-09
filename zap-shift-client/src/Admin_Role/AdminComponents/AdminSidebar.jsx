@@ -17,52 +17,52 @@ import {
 const navItems = [
   {
     name: "Overview",
-    path: "/Md.Mesbhaul_Alam_Toha/overview",
+    path: "/admin/overview",
     icon: LayoutDashboard,
   },
   {
     name: "Manage User",
-    path: "/Md.Mesbhaul_Alam_Toha/manage-user",
+    path: "/admin/manage-user",
     icon: Users,
   },
   {
     name: "Orders",
-    path: "/Md.Mesbhaul_Alam_Toha/orders",
+    path: "/admin/orders",
     icon: ClipboardList,
   },
   {
     name: "Parcel Tracking",
-    path: "/Md.Mesbhaul_Alam_Toha/parcel-tracking",
+    path: "/admin/parcel-tracking",
     icon: Package,
   },
   {
     name: "Payment Receive",
-    path: "/Md.Mesbhaul_Alam_Toha/payment-receive",
+    path: "/admin/payment-receive",
     icon: CreditCard,
   },
   {
     name: "Manage Rider",
-    path: "/Md.Mesbhaul_Alam_Toha/manage-rider",
+    path: "/admin/manage-rider",
     icon: Bike,
   },
   {
     name: "Rider Assign",
-    path: "/Md.Mesbhaul_Alam_Toha/rider-assign",
+    path: "/admin/rider-assign",
     icon: ClipboardList,
   },
   {
     name: "Rider Payment",
-    path: "/Md.Mesbhaul_Alam_Toha/rider-payment",
+    path: "/admin/rider-payment",
     icon: Wallet,
   },
   {
     name: "Rider Task Update",
-    path: "/Md.Mesbhaul_Alam_Toha/rider-task-update",
+    path: "/admin/rider-task-update",
     icon: Package,
   },
   {
     name: "Notifications",
-    path: "/Md.Mesbhaul_Alam_Toha/notifications",
+    path: "/admin/notifications",
     icon: Bell,
   },
 ];
@@ -136,7 +136,7 @@ export const AdminSidebar = ({ isOpen, onClose }) => {
           <div className="rounded-xl bg-white/10 p-4">
             <p className="text-sm font-semibold">Admin Route</p>
             <p className="mt-1 break-all text-xs text-gray-300">
-              /Md.Mesbhaul_Alam_Toha
+              /admin
             </p>
           </div>
         </div>

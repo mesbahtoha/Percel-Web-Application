@@ -232,7 +232,7 @@ export const AdminNavbar = ({
 
               <div className="mt-3 border-t border-gray-100 pt-3">
                 <Link
-                to="/Md.Mesbhaul_Alam_Toha/notifications"
+                to="/admin/notifications"
                   onClick={() => {
                     setNotificationOpen(false);
                     if (typeof onOpenNotifications === "function") {

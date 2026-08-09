@@ -159,7 +159,7 @@ export const ManageUSers = () => {
                       </td>
                       <td className="px-5 py-4 text-right">
                         <Link
-                          to={`/Md.Mesbhaul_Alam_Toha/manage-user/${user._id}`}
+                          to={`/admin/manage-user/${user._id}`}
                           className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-medium text-white transition hover:bg-blue-700"
                         >
                           <Eye size={14} />
@@ -205,7 +205,7 @@ export const ManageUSers = () => {
 
                   <div className="mt-4">
                     <Link
-                      to={`/Md.Mesbhaul_Alam_Toha/manage-user/${user._id}`}
+                      to={`/admin/manage-user/${user._id}`}
                       className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
                     >
                       <Eye size={16} />

@@ -57,7 +57,7 @@ export const OrderDetails = () => {
         <p className="text-sm text-slate-500">{error}</p>
         <div className="flex gap-3">
           <Link
-            to="/Md.Mesbhaul_Alam_Toha/orders"
+            to="/admin/orders"
             className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Back
@@ -81,7 +81,7 @@ export const OrderDetails = () => {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <Link
-            to="/Md.Mesbhaul_Alam_Toha/orders"
+            to="/admin/orders"
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             <ArrowLeft size={18} />

@@ -1,6 +1,9 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import ProfastLogo from "../ProfastLogo/ProfastLogo";
 import useAuth from "../../../hooks/useAuth";
+import { useTheme } from "../../../hooks/useTheme";
+import { useEffect, useState } from "react";
+import { httpClient } from "../../../api/http";
 import {
   FiHome,
   FiBox,
@@ -9,12 +12,34 @@ import {
   FiInfo,
   FiUser,
   FiLogOut,
+  FiMoon,
+  FiSun,
+  FiShield,
+  FiMail,
 } from "react-icons/fi";
 import { Bike } from "lucide-react";
 
 const Navbar = () => {
   const { user, logOut, loading } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user?.email) return;
+    let mounted = true;
+    httpClient
+      .get(`/users/role/${user.email}`)
+      .then(({ data }) => {
+        if (mounted) setIsAdmin(Boolean(data.isAdmin || data.role === "admin"));
+      })
+      .catch(() => {
+        if (mounted) setIsAdmin(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [user?.email]);
 
   const navLinkClass = ({ isActive }) =>
     `flex items-center gap-2 px-3 py-2 transition duration-200 ${
@@ -68,6 +93,13 @@ const Navbar = () => {
           About Us
         </NavLink>
       </li>
+
+      <li>
+        <NavLink to="/contact" className={navLinkClass}>
+          <FiMail size={18} />
+          Contact
+        </NavLink>
+      </li>
     </>
   );
 
@@ -76,9 +108,7 @@ const Navbar = () => {
       .then(() => {
         navigate("/", { replace: true });
       })
-      .catch((error) => {
-        // console.log(error);
-      });
+      .catch(() => {});
   };
 
   const renderAuthSection = () => {
@@ -123,6 +153,14 @@ const Navbar = () => {
                 Profile
               </Link>
             </li>
+            {isAdmin && (
+              <li>
+                <Link className="font-bold flex items-center gap-2" to="/admin">
+                  <FiShield size={18} />
+                  Admin Dashboard
+                </Link>
+              </li>
+            )}
             <li>
               <button
                 onClick={handleLogout}
@@ -190,7 +228,17 @@ const Navbar = () => {
         <ul className="menu menu-horizontal px-1">{navItems}</ul>
       </div>
 
-      <div className="navbar-end">{renderAuthSection()}</div>
+      <div className="navbar-end">
+        <button
+          onClick={toggleTheme}
+          type="button"
+          aria-label="Toggle dark mode"
+          className="btn btn-ghost btn-circle mr-1"
+        >
+          {theme === "dark" ? <FiSun size={20} /> : <FiMoon size={20} />}
+        </button>
+        {renderAuthSection()}
+      </div>
     </div>
   );
 };

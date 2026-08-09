@@ -5,6 +5,14 @@
     <link rel="icon" type="image/svg+xml" href="/delivery-van.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ZapShift — Parcel Delivery</title>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("profast-theme") || "light";
+          document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
