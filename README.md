@@ -27,28 +27,7 @@
 | 👑 **Admin** | `admin@gmail.com` | `admin123` |
 | 👤 **User (Demo)** | `user@gmail.com` | `user123` |
 
-> Both demo accounts are created by the seed script (Firebase Auth + MongoDB) — see [Seeding](#-seeding-admin--demo-accounts). You can also use the **Admin Demo / User Demo** one-click buttons on the login page.
-
-### Admin Routes
-
-The admin dashboard lives under the **`/admin`** base path (role-based — only users with `role: admin` can access it).
-
-| Route | Description |
-|---|---|
-| `/admin` | Admin Overview (dashboard) |
-| `/admin/overview` | Overview (same as dashboard) |
-| `/admin/manage-user` | Manage users |
-| `/admin/manage-user/:id` | User details |
-| `/admin/orders` | All orders |
-| `/admin/orders/:id` | Order details |
-| `/admin/parcel-tracking` | Parcel tracking |
-| `/admin/payment-receive` | Payments received |
-| `/admin/manage-rider` | Manage riders |
-| `/admin/manage-rider/:id` | Rider details |
-| `/admin/rider-assign` | Assign riders to parcels |
-| `/admin/rider-payment` | Rider payments |
-| `/admin/rider-task-update` | Rider task updates |
-| `/admin/notifications` | Admin notifications |
+> Both demo accounts are created by the seed script (Firebase Auth + MongoDB)
 
 ---
 
