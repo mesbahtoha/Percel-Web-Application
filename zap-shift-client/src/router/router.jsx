@@ -41,13 +41,18 @@ import { RiderNotification } from "../RiderRole/pages/Rider/RiderNotification";
 import { TrackParcel } from "../pages/Dashboard/TrackParcel/TrackParcel";
 import About from "../pages/About/About";
 import Contact from "../pages/Contact/Contact";
+import { AdminProfile } from "../Admin_Role/adminPages/Profile/AdminProfile";
+import NotFound from "../pages/NotFound/NotFound";
+import ErrorPage from "../pages/NotFound/ErrorPage";
 
 export const router = createBrowserRouter([
   {
   path: "/",
   element: <RootLayout />,
+  errorElement: <ErrorPage />,
   children: [
     { index: true, element: <Home /> },
+    { path: "*", element: <NotFound /> },
     {
       path: "coverage",
       element: <Coverage />,
@@ -204,6 +209,7 @@ export const router = createBrowserRouter([
     { path: "rider-payment", element: <RiderPAyments /> },
     { path: "rider-task-update", element: <RiderTaskUpdate /> },
     { path: "notifications", element: <AdminNotifications /> },
+    { path: "profile", element: <AdminProfile /> },
   ],
 }
 

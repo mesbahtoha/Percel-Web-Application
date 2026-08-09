@@ -1,6 +1,6 @@
 import { collections } from "../config/db.js";
 import { ApiError } from "../utils/ApiError.js";
-import { now, requireEmail } from "../utils/helpers.js";
+import { now, requireEmail, serializeDoc } from "../utils/helpers.js";
 
 export const createUser = async (req, res) => {
   const { email, picture } = req.body;
@@ -90,6 +90,21 @@ export const updateProfile = async (req, res) => {
   }
 
   res.send({ message: "Profile updated successfully", result });
+};
+
+export const getUserProfile = async (req, res) => {
+  const { email } = req.params;
+
+  requireEmail(email);
+
+  if (req.decoded.email !== email) {
+    throw new ApiError(403, "forbidden access");
+  }
+
+  const user = await collections.users().findOne({ email });
+  if (!user) throw new ApiError(404, "User not found");
+
+  res.send(serializeDoc(user));
 };
 
 export const getUserRole = async (req, res) => {

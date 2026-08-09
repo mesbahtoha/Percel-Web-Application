@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Wallet,
   Bell,
+  UserRound,
   X,
 } from "lucide-react";
 
@@ -64,6 +65,11 @@ const navItems = [
     name: "Notifications",
     path: "/admin/notifications",
     icon: Bell,
+  },
+  {
+    name: "Profile",
+    path: "/admin/profile",
+    icon: UserRound,
   },
 ];
 

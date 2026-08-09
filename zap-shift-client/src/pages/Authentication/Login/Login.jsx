@@ -6,6 +6,7 @@ import useAuth from "../../../hooks/useAuth";
 import { useState } from "react";
 import Swal from "sweetalert2";
 import { httpClient } from "../../../api/http";
+import { getGoogleAuthErrorMessage } from "../../../hooks/googleAuthErrorMessage";
 
 const ADMIN_DEMO = { email: "admin@gmail.com", password: "admin123" };
 const USER_DEMO = { email: "user@gmail.com", password: "user123" };
@@ -52,19 +53,33 @@ export const Login = () => {
       setSubmitting(true);
       setLoginError("");
       const result = await signInwithGoogle();
-      const user = result.user;
+      const googleUser = result.user;
 
       const userInfo = {
-        name: user.displayName || "No Name",
-        email: user.email,
+        name: googleUser.displayName || "No Name",
+        email: googleUser.email,
         role: "user",
-        picture: user.photoURL || "",
+        picture: googleUser.photoURL || "",
       };
 
-      await httpClient.post("/users", userInfo);
-      await redirectByRole(user.email);
-    } catch {
-      setLoginError("Google sign-in failed. Please try again.");
+      try {
+        await httpClient.post("/users", userInfo);
+      } catch {
+        // DB sync is non-fatal — Firebase login already succeeded.
+      }
+
+      await redirectByRole(googleUser.email);
+    } catch (error) {
+      const message = getGoogleAuthErrorMessage(error);
+      setLoginError(message);
+      Swal.fire({
+        icon: "error",
+        title: "Google sign-in failed",
+        text: message,
+        background: "#1f2937",
+        color: "#f9fafb",
+        confirmButtonColor: "#84cc16",
+      });
     } finally {
       setSubmitting(false);
     }

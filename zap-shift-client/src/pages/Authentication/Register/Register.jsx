@@ -7,6 +7,7 @@ import axios from "axios";
 import { useState } from "react";
 import useAxios from "../../../hooks/useAxios";
 import Swal from "sweetalert2";
+import { getGoogleAuthErrorMessage } from "../../../hooks/googleAuthErrorMessage";
 
 export const Register = () => {
   const {
@@ -63,23 +64,28 @@ export const Register = () => {
       setSubmitting(true);
 
       const result = await signInwithGoogle();
-      const user = result.user;
+      const googleUser = result.user;
 
       const userInfo = {
-        name: user.displayName || "No Name",
-        email: user.email,
+        name: googleUser.displayName || "No Name",
+        email: googleUser.email,
         role: "user",
-        picture: user.photoURL || "",
+        picture: googleUser.photoURL || "",
       };
 
-      await axiosInstance.post("/users", userInfo);
+      try {
+        await axiosInstance.post("/users", userInfo);
+      } catch {
+        // DB sync is non-fatal — Firebase registration already succeeded.
+      }
 
       navigate("/dashboard/overview", { replace: true });
-    } catch {
+    } catch (error) {
+      const message = getGoogleAuthErrorMessage(error);
       Swal.fire({
         icon: "error",
         title: "Google sign-in failed",
-        text: "Something went wrong. Please try again.",
+        text: message,
         background: "#1f2937",
         color: "#f9fafb",
         confirmButtonColor: "#84cc16",

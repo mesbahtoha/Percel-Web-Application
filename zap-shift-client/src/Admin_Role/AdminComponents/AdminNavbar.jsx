@@ -27,13 +27,11 @@ const getInitials = (name = "", email = "") => {
 
 export const AdminNavbar = ({
   onMenuClick,
-  onSearch,
   onOpenNotifications,
 }) => {
   const auth = getAuth();
   const currentUser = auth.currentUser;
 
-  const [searchText, setSearchText] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -59,8 +57,7 @@ export const AdminNavbar = ({
       const { data } = await authHttpClient.get("/admin/notifications");
 
       setNotifications(Array.isArray(data) ? data.slice(0, 6) : []);
-    } catch (error) {
-      console.error("Navbar notifications error:", error.message);
+    } catch {
       setNotifications([]);
     } finally {
       setLoadingNotifications(false);
@@ -97,14 +94,6 @@ export const AdminNavbar = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-
-    if (typeof onSearch === "function") {
-      onSearch(searchText.trim());
-    }
-  };
-
   const handleMarkAsRead = async (id) => {
     try {
       await authHttpClient.patch(`/admin/notifications/${id}/read`);
@@ -114,8 +103,8 @@ export const AdminNavbar = ({
           item._id === id ? { ...item, isRead: true } : item
         )
       );
-    } catch (error) {
-      // console.error("Failed to mark notification as read");
+    } catch {
+      // ignore read-marking failures
     }
   };
 
@@ -123,8 +112,8 @@ export const AdminNavbar = ({
     try {
       await signOut(auth);
       window.location.href = "/";
-    } catch (error) {
-      // console.error("Logout failed:", error.message);
+    } catch {
+      // ignore logout failures
     }
   };
 
@@ -283,10 +272,14 @@ export const AdminNavbar = ({
               </div>
 
               <div className="mt-2 space-y-1">
-                {/* <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <Link
+                  to="/admin/profile"
+                  onClick={() => setProfileOpen(false)}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
                   <User size={16} />
                   Profile
-                </button> */}
+                </Link>
 
                 <button
                   onClick={handleLogout}
