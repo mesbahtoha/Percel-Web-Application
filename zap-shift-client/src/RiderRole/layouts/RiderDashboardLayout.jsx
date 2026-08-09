@@ -9,8 +9,8 @@ const RiderDashboardLayout = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex min-h-screen">
-        {/* Desktop Sidebar */}
-        <div className="hidden lg:block">
+        {/* Desktop Sidebar — fixed while content scrolls */}
+        <div className="hidden lg:sticky lg:top-0 lg:block lg:h-screen">
           <RiderSidebar />
         </div>
 

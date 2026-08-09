@@ -61,7 +61,7 @@ const RiderSidebar = ({ onNavigate, mobile = false }) => {
 
   return (
     <aside
-      className={`h-full w-72 shrink-0 border-r border-gray-200 bg-white p-5 ${
+      className={`flex h-full w-72 shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-white p-5 ${
         mobile ? "block" : ""
       }`}
     >
