@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { collections } from "../config/db.js";
+import { firebaseAdmin } from "../config/firebase.js";
 import { ApiError } from "../utils/ApiError.js";
 import { createNotification } from "../services/notification.service.js";
 import {
@@ -87,9 +88,8 @@ export const getAdminUsers = async (req, res) => {
           { email: { $regex: search, $options: "i" } },
           { phone: { $regex: search, $options: "i" } },
         ],
-        role: { $ne: "admin" },
       }
-    : { role: { $ne: "admin" } };
+    : {};
 
   const users = await collections.users()
     .find(query)
@@ -110,6 +110,137 @@ export const getAdminUsers = async (req, res) => {
   );
 
   res.send(enrichedUsers);
+};
+
+export const updateUserRole = async (req, res) => {
+  const { id } = req.params;
+  const { role } = req.body;
+
+  requireObjectId(id, "user id");
+
+  if (!["user", "admin", "rider"].includes(role)) {
+    throw new ApiError(400, "Invalid role");
+  }
+
+  const user = await collections.users().findOne({ _id: toObjectId(id) });
+  if (!user) throw new ApiError(404, "User not found");
+
+  if (user.email === req.decoded.email) {
+    throw new ApiError(400, "You cannot change your own role");
+  }
+
+  await collections.users().updateOne(
+    { _id: toObjectId(id) },
+    { $set: { role, updated_at: now() } }
+  );
+
+  if (role === "rider") {
+    const existingRider = await collections.riderAccounts().findOne({
+      email: user.email,
+    });
+
+    if (!existingRider) {
+      await collections.riderAccounts().insertOne({
+        email: user.email,
+        name: user.name || "",
+        phone: user.phone || "",
+        role: "rider",
+        approvalStatus: "pending",
+        workStatus: "free",
+        created_at: now(),
+        updated_at: now(),
+      });
+    }
+  }
+
+  await createNotification({
+    type: "role_changed",
+    title: "Your role has been updated",
+    message: `Your account role is now ${role}.`,
+    recipientRole: role === "rider" ? "rider" : "user",
+    recipientEmail: user.email,
+    relatedCollection: "users",
+    meta: { role },
+  });
+
+  res.send({ message: "User role updated successfully", role });
+};
+
+export const updateUserStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  requireObjectId(id, "user id");
+
+  if (!["active", "blocked"].includes(status)) {
+    throw new ApiError(400, "Invalid status");
+  }
+
+  const user = await collections.users().findOne({ _id: toObjectId(id) });
+  if (!user) throw new ApiError(404, "User not found");
+
+  if (user.email === req.decoded.email) {
+    throw new ApiError(400, "You cannot change your own account status");
+  }
+
+  await collections.users().updateOne(
+    { _id: toObjectId(id) },
+    { $set: { status, updated_at: now() } }
+  );
+
+  try {
+    const fbUser = await firebaseAdmin.auth().getUserByEmail(user.email);
+    await firebaseAdmin.auth().updateUser(fbUser.uid, {
+      disabled: status === "blocked",
+    });
+  } catch (firebaseError) {
+    console.error("Firebase account status sync failed:", firebaseError.message);
+  }
+
+  await createNotification({
+    type: "account_status",
+    title: "Account status updated",
+    message:
+      status === "blocked"
+        ? "Your account has been disabled by the admin."
+        : "Your account has been re-activated by the admin.",
+    recipientRole: user.role === "rider" ? "rider" : "user",
+    recipientEmail: user.email,
+    relatedCollection: "users",
+    meta: { status },
+  });
+
+  res.send({ message: "User status updated successfully", status });
+};
+
+export const deleteUserAccount = async (req, res) => {
+  const { id } = req.params;
+
+  requireObjectId(id, "user id");
+
+  const user = await collections.users().findOne({ _id: toObjectId(id) });
+  if (!user) throw new ApiError(404, "User not found");
+
+  if (user.email === req.decoded.email) {
+    throw new ApiError(400, "You cannot delete your own account");
+  }
+
+  await Promise.all([
+    collections.users().deleteOne({ _id: toObjectId(id) }),
+    collections.notifications().deleteMany({ recipientEmail: user.email }),
+    collections.parcels().deleteMany({ userEmail: user.email }),
+    collections.payments().deleteMany({ email: user.email }),
+    collections.riderAccounts().deleteOne({ email: user.email }),
+  ]);
+
+  try {
+    const fbUser = await firebaseAdmin.auth().getUserByEmail(user.email);
+    await firebaseAdmin.auth().deleteUser(fbUser.uid);
+  } catch (firebaseError) {
+    console.error("Firebase account delete failed:", firebaseError.message);
+  }
+
+  res.send({ message: "User deleted successfully" });
 };
 
 export const getAdminUserById = async (req, res) => {
@@ -263,6 +394,19 @@ export const updateParcelTrackingStatus = async (req, res) => {
     meta: { status: normalized },
   });
 
+  if (parcel.userEmail) {
+    await createNotification({
+      type: "parcel_status_update",
+      title: "Parcel status updated",
+      message: `Your parcel ${parcel.trackingId || id} is now ${normalized}.`,
+      recipientRole: "user",
+      recipientEmail: parcel.userEmail,
+      relatedId: id,
+      relatedCollection: "parcels",
+      meta: { trackingId: parcel.trackingId || "", status: normalized },
+    });
+  }
+
   res.send({ message: "Parcel status updated successfully" });
 };
 
@@ -307,10 +451,29 @@ export const receiveAdminPayment = async (req, res) => {
   );
 
   if (payment.parcelId && isValidObjectId(payment.parcelId)) {
+    const parcelForNotif = await collections
+      .parcels()
+      .findOne({ _id: toObjectId(payment.parcelId) });
+
     await collections.parcels().updateOne(
       { _id: toObjectId(payment.parcelId) },
       { $set: { cashReceivedByAdmin: true, updatedAt: now() } }
     );
+
+    if (payment.email) {
+      await createNotification({
+        type: "cash_received",
+        title: "Cash received",
+        message: `Cash of ৳${Number(payment.amountTaka || 0)} for parcel ${
+          parcelForNotif?.trackingId || payment.parcelName || payment.parcelId
+        } has been received.`,
+        recipientRole: "user",
+        recipientEmail: payment.email,
+        relatedId: payment.parcelId,
+        relatedCollection: "payments",
+        meta: { trackingId: parcelForNotif?.trackingId || "", amountTaka: Number(payment.amountTaka || 0) },
+      });
+    }
   }
 
   res.send({ message: "Payment received successfully by admin" });
@@ -430,6 +593,17 @@ export const updateRiderApproval = async (req, res) => {
     meta: { approvalStatus: normalized },
   });
 
+  await createNotification({
+    type: "rider_approval",
+    title: "Rider approval updated",
+    message: `Your rider application status is now ${normalized}.`,
+    recipientRole: "rider",
+    recipientEmail: rider.email,
+    relatedId: id,
+    relatedCollection: "riderAccounts",
+    meta: { approvalStatus: normalized },
+  });
+
   res.send({ message: "Rider approval updated successfully" });
 };
 
@@ -493,6 +667,16 @@ export const payRider = async (req, res) => {
     title: "Cash out message",
     message: `Cash out completed for rider ${riderEmail}`,
     recipientRole: "admin",
+    relatedCollection: "riderEarnings",
+    meta: { riderEmail, totalPaidNow },
+  });
+
+  await createNotification({
+    type: "cash_out",
+    title: "Cash out completed",
+    message: `Your earnings of ৳${totalPaidNow} have been paid out.`,
+    recipientRole: "rider",
+    recipientEmail: riderEmail,
     relatedCollection: "riderEarnings",
     meta: { riderEmail, totalPaidNow },
   });

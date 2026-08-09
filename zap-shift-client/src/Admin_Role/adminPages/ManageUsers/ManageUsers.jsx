@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Eye, RefreshCw, Search, Users } from "lucide-react";
+import { Eye, RefreshCw, Search, Trash2, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getAuth } from "firebase/auth";
+import Swal from "sweetalert2";
 import { authHttpClient, getErrorMessage } from "../../../api/http";
 
 export const ManageUSers = () => {
@@ -10,6 +12,8 @@ export const ManageUSers = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+
+  const currentAdminEmail = getAuth().currentUser?.email;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -41,6 +45,93 @@ export const ManageUSers = () => {
   useEffect(() => {
     fetchUsers();
   }, [debouncedSearch]);
+
+  const notifyResult = (icon, title, text) =>
+    Swal.fire({
+      toast: true,
+      position: "top-end",
+      icon,
+      title,
+      text,
+      showConfirmButton: false,
+      timer: 3000,
+    });
+
+  const handleRoleChange = async (user, newRole) => {
+    if (newRole === user.role) return;
+
+    const { isConfirmed } = await Swal.fire({
+      title: "Change user role?",
+      text: `${user.name || user.email} will become a "${newRole}".`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#2563eb",
+      confirmButtonText: "Yes, change role",
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      await authHttpClient.patch(`/admin/users/${user._id}/role`, { role: newRole });
+      notifyResult("success", "Role updated", `${user.email} is now a ${newRole}`);
+      fetchUsers({ isRefresh: true });
+    } catch (err) {
+      notifyResult("error", "Failed to update role", getErrorMessage(err));
+    }
+  };
+
+  const handleStatusToggle = async (user) => {
+    const isBlocked = (user.accountStatus || user.status || "active") === "blocked";
+    const nextStatus = isBlocked ? "active" : "blocked";
+
+    const { isConfirmed } = await Swal.fire({
+      title: isBlocked ? "Re-activate this account?" : "Disable this account?",
+      text: isBlocked
+        ? `${user.name || user.email} will be able to log in again.`
+        : `${user.name || user.email} will not be able to log in until re-activated.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: isBlocked ? "#059669" : "#dc2626",
+      confirmButtonText: isBlocked ? "Yes, activate" : "Yes, disable",
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      await authHttpClient.patch(`/admin/users/${user._id}/status`, {
+        status: nextStatus,
+      });
+      notifyResult(
+        "success",
+        isBlocked ? "Account activated" : "Account disabled",
+        `${user.email} is now ${nextStatus}`
+      );
+      fetchUsers({ isRefresh: true });
+    } catch (err) {
+      notifyResult("error", "Failed to update status", getErrorMessage(err));
+    }
+  };
+
+  const handleDeleteUser = async (user) => {
+    const { isConfirmed } = await Swal.fire({
+      title: "Delete this user?",
+      text: `${user.name || user.email} and all of their parcels, payments and notifications will be permanently removed. This cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      confirmButtonText: "Yes, delete",
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      await authHttpClient.delete(`/admin/users/${user._id}`);
+      notifyResult("success", "User deleted", `${user.email} was removed`);
+      fetchUsers({ isRefresh: true });
+    } catch (err) {
+      notifyResult("error", "Failed to delete user", getErrorMessage(err));
+    }
+  };
 
   const totalUsers = useMemo(() => users.length, [users]);
 
@@ -127,12 +218,17 @@ export const ManageUSers = () => {
                     <th className="px-5 py-3">User</th>
                     <th className="px-5 py-3">Email</th>
                     <th className="px-5 py-3">Total Parcels</th>
+                    <th className="px-5 py-3">Role</th>
                     <th className="px-5 py-3">Account Status</th>
                     <th className="px-5 py-3 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
+                  {users.map((user) => {
+                    const isCurrentAdmin = user.email === currentAdminEmail;
+                    const isBlocked = (user.accountStatus || user.status || "active") === "blocked";
+
+                    return (
                     <tr key={user._id} className="border-t border-slate-100 text-sm">
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
@@ -155,25 +251,76 @@ export const ManageUSers = () => {
                       <td className="px-5 py-4 text-slate-600">{user.email || "N/A"}</td>
                       <td className="px-5 py-4 text-slate-600">{user.totalParcels ?? 0}</td>
                       <td className="px-5 py-4">
+                        <select
+                          value={user.role || "user"}
+                          disabled={isCurrentAdmin}
+                          onChange={(e) => handleRoleChange(user, e.target.value)}
+                          className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold capitalize outline-none transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                            user.role === "admin"
+                              ? "border-purple-200 bg-purple-50 text-purple-700"
+                              : user.role === "rider"
+                              ? "border-lime-200 bg-lime-50 text-lime-700"
+                              : "border-slate-200 bg-white text-slate-700"
+                          }`}
+                          title={isCurrentAdmin ? "You cannot change your own role" : "Change role"}
+                        >
+                          <option value="user">User</option>
+                          <option value="rider">Rider</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      </td>
+                      <td className="px-5 py-4">
                         <StatusBadge status={user.accountStatus || user.status || "active"} />
                       </td>
-                      <td className="px-5 py-4 text-right">
-                        <Link
-                          to={`/admin/manage-user/${user._id}`}
-                          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-medium text-white transition hover:bg-blue-700"
-                        >
-                          <Eye size={14} />
-                          View
-                        </Link>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleStatusToggle(user)}
+                            disabled={isCurrentAdmin}
+                            title={isCurrentAdmin ? "You cannot change your own status" : isBlocked ? "Activate account" : "Disable account"}
+                            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                              isBlocked
+                                ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                            }`}
+                          >
+                            {isBlocked ? "Activate" : "Disable"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(user)}
+                            disabled={isCurrentAdmin}
+                            title={isCurrentAdmin ? "You cannot delete your own account" : "Delete user"}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <Trash2 size={14} />
+                            Delete
+                          </button>
+
+                          <Link
+                            to={`/admin/manage-user/${user._id}`}
+                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-medium text-white transition hover:bg-blue-700"
+                          >
+                            <Eye size={14} />
+                            View
+                          </Link>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             <div className="grid grid-cols-1 gap-4 p-4 lg:hidden">
-              {users.map((user) => (
+              {users.map((user) => {
+                const isCurrentAdmin = user.email === currentAdminEmail;
+                const isBlocked = (user.accountStatus || user.status || "active") === "blocked";
+
+                return (
                 <div
                   key={user._id}
                   className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
@@ -203,6 +350,43 @@ export const ManageUSers = () => {
                     />
                   </div>
 
+                  <div className="mt-4 flex items-center justify-between gap-2">
+                    <select
+                      value={user.role || "user"}
+                      disabled={isCurrentAdmin}
+                      onChange={(e) => handleRoleChange(user, e.target.value)}
+                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold capitalize outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <option value="user">User</option>
+                      <option value="rider">Rider</option>
+                      <option value="admin">Admin</option>
+                    </select>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleStatusToggle(user)}
+                        disabled={isCurrentAdmin}
+                        className={`rounded-lg px-3 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                          isBlocked
+                            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                            : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                        }`}
+                      >
+                        {isBlocked ? "Activate" : "Disable"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteUser(user)}
+                        disabled={isCurrentAdmin}
+                        className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="mt-4">
                     <Link
                       to={`/admin/manage-user/${user._id}`}
@@ -213,7 +397,8 @@ export const ManageUSers = () => {
                     </Link>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}

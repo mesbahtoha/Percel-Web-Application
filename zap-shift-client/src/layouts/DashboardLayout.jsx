@@ -9,16 +9,28 @@ import {
   LayoutDashboard,
   User,
   PlusCircle,
+  Bell,
+  RefreshCw,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef, useState } from "react";
 import ProfastLogo from "../pages/shared/ProfastLogo/ProfastLogo";
 import useAuth from "../hooks/useAuth";
 import useAxiosSecure from "../hooks/useAxiosSecure";
+import { useNotificationAlerts } from "../hooks/useNotificationAlerts";
+import {
+  userNotificationsKey,
+  userUnreadCountKey,
+} from "../pages/Dashboard/Notifications/UserNotifications";
 
 const DashboardLayout = () => {
   const { user, logOut } = useAuth();
   const axiosSecure = useAxiosSecure();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const notificationRef = useRef(null);
 
   const defaultAvatar =
     "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp";
@@ -36,23 +48,48 @@ const DashboardLayout = () => {
     }`;
 
   /**
-   * Fetch unread notification count
-   * This is currently kept because the original logic exists,
-   * even though the notification UI is commented out.
+   * Live unread count — polls every 5s, fires a toast when new
+   * notifications arrive and keeps the tab title in sync.
    */
-  const { data: unreadData } = useQuery({
-    queryKey: ["unreadCount", user?.email],
+  const unreadCount = useNotificationAlerts({
+    role: "user",
+    email: user?.email,
+    viewPath: "/dashboard/notifications",
+    unreadKey: userUnreadCountKey(user?.email),
+  });
+
+  /**
+   * Recent notifications for the bell dropdown.
+   * Shares the cache with the Notifications page, so marking items
+   * as read there immediately reflects in the dropdown badge.
+   */
+  const { data: notifications = [], refetch: refetchNotifications } = useQuery({
+    queryKey: userNotificationsKey(user?.email),
     queryFn: async () => {
-      const res = await axiosSecure.get("/user/notification/unread-count");
-      return res.data || { count: 0 };
+      const res = await axiosSecure.get("/user/notifications");
+      return res.data || [];
     },
-    enabled: !!user?.email,
-    refetchInterval: 15000,
+    enabled: notificationOpen && !!user?.email,
+    refetchInterval: notificationOpen ? 5000 : false,
     refetchOnWindowFocus: true,
     staleTime: 0,
   });
 
-  const unreadCount = unreadData?.count ?? 0;
+  const recentNotifications = notifications.slice(0, 5);
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await axiosSecure.patch(`/user/notifications/${id}/read`);
+      queryClient.setQueryData(userNotificationsKey(user?.email), (old = []) =>
+        old.map((n) => (n._id === id ? { ...n, isRead: true } : n))
+      );
+      queryClient.setQueryData(userUnreadCountKey(user?.email), (old) => ({
+        count: Math.max(0, (old?.count ?? 1) - 1),
+      }));
+    } catch {
+      // ignore read-marking failures
+    }
+  };
 
   /**
    * Logout handler
@@ -98,6 +135,101 @@ const DashboardLayout = () => {
               >
                 Back to Home
               </Link>
+
+              {/* Notification bell dropdown */}
+              <div className="relative" ref={notificationRef}>
+                <button
+                  type="button"
+                  onClick={() => setNotificationOpen((prev) => !prev)}
+                  aria-label="Notifications"
+                  className="btn btn-ghost btn-circle relative"
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {notificationOpen && (
+                  <div
+                    className="absolute right-0 mt-2 w-[340px] rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xl"
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-base-content">
+                          Notifications
+                        </h3>
+                        <p className="text-xs text-base-content/60">
+                          {unreadCount} unread
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => refetchNotifications()}
+                        className="rounded-lg p-2 text-base-content/50 hover:bg-base-200"
+                        aria-label="Refresh notifications"
+                      >
+                        <RefreshCw size={16} />
+                      </button>
+                    </div>
+
+                    <div className="max-h-96 space-y-2 overflow-y-auto">
+                      {recentNotifications.length === 0 ? (
+                        <div className="rounded-xl bg-base-200 p-4 text-center text-sm text-base-content/60">
+                          No notifications found
+                        </div>
+                      ) : (
+                        recentNotifications.map((item) => (
+                          <button
+                            type="button"
+                            key={item._id}
+                            onClick={() => handleMarkAsRead(item._id)}
+                            className={`w-full rounded-xl border p-3 text-left transition ${
+                              item.isRead
+                                ? "border-base-300 bg-base-100"
+                                : "border-primary/30 bg-primary/5"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-semibold text-base-content">
+                                  {item.title || "Notification"}
+                                </p>
+                                <p className="mt-1 text-xs text-base-content/70">
+                                  {item.message || "No message"}
+                                </p>
+                                <p className="mt-2 text-[11px] text-base-content/40">
+                                  {item.createdAt
+                                    ? new Date(item.createdAt).toLocaleString()
+                                    : ""}
+                                </p>
+                              </div>
+
+                              {!item.isRead && (
+                                <span className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary" />
+                              )}
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="mt-3 border-t border-base-300 pt-3">
+                      <Link
+                        to="/dashboard/notifications"
+                        onClick={() => setNotificationOpen(false)}
+                        className="block w-full rounded-xl bg-base-200 px-4 py-2 text-center text-sm font-medium text-base-content hover:bg-base-300"
+                      >
+                        View all notifications
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* User dropdown */}
               <div className="dropdown dropdown-end">
@@ -228,6 +360,24 @@ const DashboardLayout = () => {
               <NavLink to="/dashboard/trackParcel" className={navLinkClass}>
                 <MapPinned className="h-5 w-5" />
                 <span>Track Parcel</span>
+              </NavLink>
+
+              <NavLink to="/dashboard/notifications" className={navLinkClass}>
+                <div className="relative">
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                    </span>
+                  )}
+                </div>
+                <span>Notifications</span>
+                {unreadCount > 0 && (
+                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-content">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </NavLink>
             </nav>
           </div>

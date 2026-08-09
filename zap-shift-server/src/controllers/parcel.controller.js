@@ -44,6 +44,17 @@ export const createParcel = async (req, res) => {
     meta: { trackingId: newParcel.trackingId },
   });
 
+  await createNotification({
+    type: "parcel_booked",
+    title: "Parcel booked successfully",
+    message: `Your parcel ${newParcel.trackingId} has been booked. Please complete the payment to continue.`,
+    recipientRole: "user",
+    recipientEmail: newParcel.userEmail,
+    relatedId: result.insertedId,
+    relatedCollection: "parcels",
+    meta: { trackingId: newParcel.trackingId },
+  });
+
   res.status(201).json({
     message: "Parcel saved successfully",
     insertedId: result.insertedId,

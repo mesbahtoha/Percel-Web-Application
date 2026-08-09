@@ -12,6 +12,9 @@ router.get("/dashboard-overview", adminController.getDashboardOverview);
 
 router.get("/users", adminController.getAdminUsers);
 router.get("/users/:id", adminController.getAdminUserById);
+router.patch("/users/:id/role", adminController.updateUserRole);
+router.patch("/users/:id/status", adminController.updateUserStatus);
+router.delete("/users/:id", adminController.deleteUserAccount);
 
 router.get("/orders", adminController.getAdminOrders);
 router.get("/orders/:id", adminController.getAdminOrderById);

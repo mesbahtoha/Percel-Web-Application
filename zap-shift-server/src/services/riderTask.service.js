@@ -90,5 +90,20 @@ export const createRiderTask = async ({ parcel, rider, adminEmail, adminMessage 
     },
   });
 
+  await createNotification({
+    type: "rider_assigned",
+    title: "Rider assigned to your parcel",
+    message: `Rider ${rider.name || rider.email} has been assigned to deliver your parcel ${parcel.trackingId || parcelId}.`,
+    recipientRole: "user",
+    recipientEmail: parcel.userEmail,
+    relatedId: parcelId,
+    relatedCollection: "parcels",
+    meta: {
+      trackingId: parcel.trackingId || "",
+      riderName: rider.name || "",
+      riderPhone: rider.phone || "",
+    },
+  });
+
   return result;
 };

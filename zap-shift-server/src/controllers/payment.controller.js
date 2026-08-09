@@ -137,6 +137,21 @@ export const savePayment = async (req, res) => {
     meta: { transactionId, amountTaka: Number(amountTaka) },
   });
 
+  await createNotification({
+    type: "payment_success",
+    title: "Payment successful",
+    message: `Your payment of ৳${Number(amountTaka)} for parcel ${parcel.parcelName || parcel.trackingId} was successful.`,
+    recipientRole: "user",
+    recipientEmail: email,
+    relatedId: parcelId,
+    relatedCollection: "payments",
+    meta: {
+      transactionId,
+      trackingId: parcel.trackingId || "",
+      amountTaka: Number(amountTaka),
+    },
+  });
+
   res.status(201).json({
     message: "Payment saved and parcel marked as paid",
     paymentInsertResult: paymentResult,

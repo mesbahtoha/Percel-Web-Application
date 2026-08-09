@@ -210,5 +210,25 @@ export const updateRiderTaskStatus = async (req, res) => {
     meta: { riderEmail: task.riderEmail, status: nextStatus },
   });
 
+  const parcelForNotif = await collections
+    .parcels()
+    .findOne({ _id: toObjectId(task.parcelId) });
+
+  if (parcelForNotif?.userEmail) {
+    await createNotification({
+      type: "parcel_status_update",
+      title: "Parcel status updated",
+      message: `Your parcel ${parcelForNotif.trackingId || task.trackingId || ""} is now ${nextStatus}.`,
+      recipientRole: "user",
+      recipientEmail: parcelForNotif.userEmail,
+      relatedId: task.parcelId,
+      relatedCollection: "riderTasks",
+      meta: {
+        trackingId: parcelForNotif.trackingId || task.trackingId || "",
+        status: nextStatus,
+      },
+    });
+  }
+
   res.send({ message: "Task status updated successfully" });
 };

@@ -17,6 +17,7 @@ import Payment from "../pages/Dashboard/Payment/Payment";
 import PaymentHistory from "../pages/Dashboard/Payment/PaymentHistory";
 import Overview from "../pages/Dashboard/Overview/Overview";
 import AddParcel from "../pages/Dashboard/AddParcel/AddParcel";
+import { UserNotifications } from "../pages/Dashboard/Notifications/UserNotifications";
 import RiderDashboardLayout from "../RiderRole/layouts/RiderDashboardLayout";
 import RiderOverview from "../RiderRole/pages/Rider/RiderOverview";
 import RiderTasks from "../RiderRole/pages/Rider/RiderTasks";
@@ -148,6 +149,10 @@ export const router = createBrowserRouter([
       {
         path: "trackParcel",
         element: <TrackParcel />,
+      },
+      {
+        path: "notifications",
+        element: <UserNotifications />,
       },
     ],
   },

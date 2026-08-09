@@ -1,19 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   FiBell,
   FiDollarSign,
   FiGrid,
   FiHome,
+  FiLogOut,
   FiTruck,
   FiUser,
   FiX,
 } from "react-icons/fi";
 import useAuth from "../../../hooks/useAuth";
-import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import { useNotificationAlerts } from "../../../hooks/useNotificationAlerts";
 import ProfastLogo from "../../../pages/shared/ProfastLogo/ProfastLogo";
 import { riderUnreadCountKey } from "../../pages/Rider/RiderNotification";
-// import { riderUnreadCountKey } from "./RiderNotification";
 
 // ─────────────────────────────────────────────
 // Unread badge
@@ -28,23 +27,22 @@ const UnreadBadge = ({ count }) => {
 };
 
 const RiderSidebar = ({ onNavigate, mobile = false }) => {
-  const { user }    = useAuth();
-  const axiosSecure = useAxiosSecure();
+  const { user, logOut } = useAuth();
+  const navigate = useNavigate();
 
-  // ✅ Fetch unread count — auto-polls every 15s so badge stays live
-  const { data: unreadData } = useQuery({
-    queryKey: riderUnreadCountKey(user?.email),
-    queryFn:  async () => {
-      const res = await axiosSecure.get("/rider/notifications/unread-count");
-      return res.data || { count: 0 };
-    },
-    enabled:              !!user?.email,
-    refetchInterval:      15_000,
-    refetchOnWindowFocus: true,
-    staleTime:            0,
+  // ✅ Fetch unread count — auto-polls every 5s so badge stays live
+  const unreadCount = useNotificationAlerts({
+    role: "rider",
+    email: user?.email,
+    viewPath: "/dashboard/rider/riderNotification",
+    unreadKey: riderUnreadCountKey(user?.email),
   });
 
-  const unreadCount = unreadData?.count ?? 0;
+  const handleLogout = () => {
+    logOut()
+      .then(() => navigate("/"))
+      .catch(() => {});
+  };
 
   const linkClass = ({ isActive }) =>
     `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
@@ -129,6 +127,18 @@ const RiderSidebar = ({ onNavigate, mobile = false }) => {
           <UnreadBadge count={unreadCount} />
         </NavLink>
       </nav>
+
+      {/* Logout */}
+      <div className="mt-6 border-t border-gray-200 pt-4">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+        >
+          <FiLogOut size={18} />
+          Logout
+        </button>
+      </div>
     </aside>
   );
 };

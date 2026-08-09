@@ -41,6 +41,10 @@ export const verifyAdmin = async (req, res, next) => {
       return res.status(403).send({ message: "admin only access" });
     }
 
+    if (user.status === "blocked") {
+      return res.status(403).send({ message: "Your account has been disabled" });
+    }
+
     req.adminUser = user;
     next();
   } catch (error) {
@@ -64,6 +68,10 @@ export const verifyRiderOrAdmin = async (req, res, next) => {
 
     if (!isAdmin && !isRider) {
       return res.status(403).send({ message: "forbidden access" });
+    }
+
+    if (user?.status === "blocked") {
+      return res.status(403).send({ message: "Your account has been disabled" });
     }
 
     req.isAdmin = isAdmin;

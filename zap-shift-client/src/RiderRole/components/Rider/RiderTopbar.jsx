@@ -1,28 +1,27 @@
-import { useQuery } from "@tanstack/react-query";
-import { FiBell, FiMenu } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import { FiBell, FiLogOut, FiMenu, FiUser } from "react-icons/fi";
+import { Link, useNavigate } from "react-router-dom";
 import useAuth from "../../../hooks/useAuth";
-import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import { useNotificationAlerts } from "../../../hooks/useNotificationAlerts";
 import { riderUnreadCountKey } from "../../pages/Rider/RiderNotification";
 
 const RiderTopbar = ({ onMenuClick }) => {
-  const { user }    = useAuth();
-  const axiosSecure = useAxiosSecure();
+  const { user, logOut } = useAuth();
+  const navigate = useNavigate();
 
-  // ✅ Live unread count — same queryKey as sidebar so they share one request
-  const { data: unreadData } = useQuery({
-    queryKey: riderUnreadCountKey(user?.email),
-    queryFn:  async () => {
-      const res = await axiosSecure.get("/rider/notifications/unread-count");
-      return res.data || { count: 0 };
-    },
-    enabled:              !!user?.email,
-    refetchInterval:      15_000,
-    refetchOnWindowFocus: true,
-    staleTime:            0,
+  // ✅ Live unread count — polls every 5s, fires a toast when new
+  //    notifications arrive and keeps the tab title in sync.
+  const unreadCount = useNotificationAlerts({
+    role: "rider",
+    email: user?.email,
+    viewPath: "/dashboard/rider/riderNotification",
+    unreadKey: riderUnreadCountKey(user?.email),
   });
 
-  const unreadCount = unreadData?.count ?? 0;
+  const handleLogout = () => {
+    logOut()
+      .then(() => navigate("/"))
+      .catch(() => {});
+  };
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white px-4 py-4 shadow-sm sm:px-5">
@@ -48,7 +47,7 @@ const RiderTopbar = ({ onMenuClick }) => {
           </div>
         </div>
 
-        {/* Right — bell + avatar */}
+        {/* Right — bell + profile */}
         <div className="flex items-center gap-3">
 
           {/* Notification bell */}
@@ -74,21 +73,49 @@ const RiderTopbar = ({ onMenuClick }) => {
             )}
           </Link>
 
-          {/* User info — hidden on mobile */}
-          <div className="hidden text-right sm:block">
-            <p className="text-sm font-semibold text-gray-800">
-              {user?.displayName || "Rider"}
-            </p>
-            <p className="text-xs text-gray-500">{user?.email}</p>
-          </div>
+          {/* Profile dropdown */}
+          <div className="dropdown dropdown-end">
+            <div
+              tabIndex={0}
+              role="button"
+              className="flex cursor-pointer items-center gap-2"
+            >
+              <img
+                src={user?.photoURL || "https://i.ibb.co/4pDNDk1/avatar-placeholder.png"}
+                alt="Rider"
+                className="h-10 w-10 rounded-full border object-cover sm:h-11 sm:w-11"
+                referrerPolicy="no-referrer"
+              />
+            </div>
 
-          {/* Avatar */}
-          <img
-            src={user?.photoURL || "https://i.ibb.co/4pDNDk1/avatar-placeholder.png"}
-            alt="Rider"
-            className="h-10 w-10 rounded-full border object-cover sm:h-11 sm:w-11"
-            referrerPolicy="no-referrer"
-          />
+            <ul
+              tabIndex={0}
+              className="menu menu-sm dropdown-content z-[100] mt-3 w-60 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg"
+            >
+              <li className="pointer-events-none mb-1 px-2 py-2">
+                <div className="flex flex-col">
+                  <span className="font-semibold text-gray-800">
+                    {user?.displayName || "Rider"}
+                  </span>
+                  <span className="break-all text-xs text-gray-500">
+                    {user?.email || "No email"}
+                  </span>
+                </div>
+              </li>
+
+              <li>
+                <Link to="/dashboard/rider/profile">
+                  <FiUser size={16} /> Profile
+                </Link>
+              </li>
+
+              <li>
+                <button type="button" onClick={handleLogout}>
+                  <FiLogOut size={16} /> Logout
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

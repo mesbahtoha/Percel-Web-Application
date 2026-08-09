@@ -7,13 +7,24 @@ import {
   serializeDoc,
 } from "../utils/helpers.js";
 
-export const getRiderNotifications = async (req, res) => {
+const recipientRoleFromRequest = (req) =>
+  req.baseUrl?.includes("/rider") ? "rider" : "user";
+
+const buildRecipientQuery = (req, email) => {
+  const role = recipientRoleFromRequest(req);
+  if (role === "rider") {
+    return { recipientRole: "rider", recipientEmail: email };
+  }
+  return { recipientEmail: email };
+};
+
+export const getNotifications = async (req, res) => {
   const email = req.decoded?.email;
   if (!email) throw new ApiError(401, "unauthorized access");
 
   const notifications = await collections
     .notifications()
-    .find({ recipientRole: "rider", recipientEmail: email })
+    .find(buildRecipientQuery(req, email))
     .sort({ createdAt: -1 })
     .limit(100)
     .toArray();
@@ -21,44 +32,34 @@ export const getRiderNotifications = async (req, res) => {
   res.send(notifications.map(serializeDoc));
 };
 
-export const getRiderUnreadCount = async (req, res) => {
+export const getUnreadCount = async (req, res) => {
   const email = req.decoded?.email;
   if (!email) throw new ApiError(401, "unauthorized access");
 
   const count = await collections.notifications().countDocuments({
-    recipientRole: "rider",
-    recipientEmail: email,
+    ...buildRecipientQuery(req, email),
     isRead: false,
   });
 
   res.send({ count });
 };
 
-export const getUserUnreadCount = async (req, res) => {
-  const email = req.decoded?.email;
-  if (!email) throw new ApiError(401, "unauthorized access");
-
-  const count = await collections.notifications().countDocuments({
-    recipientEmail: email,
-    isRead: false,
-  });
-
-  res.send({ count });
-};
-
-export const markAllRiderNotificationsRead = async (req, res) => {
+export const markAllNotificationsRead = async (req, res) => {
   const email = req.decoded?.email;
   if (!email) throw new ApiError(401, "unauthorized access");
 
   await collections.notifications().updateMany(
-    { recipientRole: "rider", recipientEmail: email, isRead: false },
+    {
+      ...buildRecipientQuery(req, email),
+      isRead: false,
+    },
     { $set: { isRead: true, readAt: now() } }
   );
 
   res.send({ message: "All notifications marked as read" });
 };
 
-export const markRiderNotificationRead = async (req, res) => {
+export const markNotificationRead = async (req, res) => {
   const { id } = req.params;
   const email = req.decoded?.email;
 
